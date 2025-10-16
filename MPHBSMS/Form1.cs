@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Data.OleDb;
 
 namespace MPHBSMS
 {
@@ -38,10 +39,11 @@ namespace MPHBSMS
         {
             try
             {
-                Log_In_Page Obj = new Log_In_Page();
+                Log_In_Page bj = new Log_In_Page();
                 this.Hide();
-                Obj.ShowDialog();
-                this.Show();
+                bj.ShowDialog();
+                
+                
             }
             catch (Exception error)
             {
@@ -53,10 +55,11 @@ namespace MPHBSMS
         {
             try
             {
-                Creata_Account Obj = new Creata_Account();
-                this.Hide();
-                Obj.ShowDialog();
+
+                Creata_Account obj = new Creata_Account();
                 this.Show();
+                obj.ShowDialog();
+                this.Hide();
             }
             catch (Exception error)
             {
@@ -84,9 +87,13 @@ namespace MPHBSMS
         private void button3_Click_1(object sender, EventArgs e)
         {
             Menu menupage = new Menu();
-            this.Hide();
-            menupage.ShowDialog();
-            this.Show();
+            this.Close();
+            menupage.Show();
+        }
+
+        private void button3_Click_2(object sender, EventArgs e)
+        {
+            
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.OleDb;
+using System.IO;
 
 namespace MPHBSMS
 {
@@ -16,47 +17,56 @@ namespace MPHBSMS
         public Log_In_Page()
         {
             InitializeComponent();
+            DatabaseHelper.InitializeDatabase();
+            
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                OleDbConnection con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\MPHBSMS.accdb");
-                con.Open();
-
-                string logIn = "select[name],[identityNumber],[password] FROM accounts WHERE ([identityNumber] = ? AND [password]=?)";
-                OleDbCommand com = new OleDbCommand(logIn, con);
-
-                com.Parameters.AddWithValue("@identyNumber", textBox1.Text);
-                com.Parameters.AddWithValue("@password", textBox2.Text);
-                OleDbDataReader reader = com.ExecuteReader();
-
-                if (reader.Read() == true)
+                DatabaseHelper.InitializeDatabase();
+                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
+                    con.Open();
 
-                    Menu menupage = new Menu();
-                    this.Hide();
-                    menupage.ShowDialog();
-                    this.Show();
+                    textBox1.Focus();
+                    string logIn = "select [name],[surname],[identityNumber],[password] FROM accounts WHERE ([identityNumber] = ? AND [password]=?)";
+                    OleDbCommand com = new OleDbCommand(logIn, con);
 
-                    string name = reader[0].ToString();
+                    com.Parameters.AddWithValue("@identyNumber", textBox1.Text.Trim());
+                    com.Parameters.AddWithValue("@password", textBox2.Text.Trim());
+                    OleDbDataReader reader = com.ExecuteReader();
 
-                    DialogResult = MessageBox.Show("Welcome " + name + "!", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                    if (reader.Read() == true)
+                    {
+                        string name = reader[0].ToString();
+                        string surname = reader[1].ToString();
+
+                        DialogResult = MessageBox.Show("Welcome " + name + " " + surname + "!", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MPHBSMS.CurrentUser = reader[0].ToString().Trim();
+
+                        Menu menupage = new Menu();
+                        menupage.Show();
+                        this.Hide();
+                    }
+                    else
+                    {
+
+                        textBox1.Clear();
+                        textBox2.Clear();
+                        textBox1.Focus();
+
+                        DialogResult = MessageBox.Show("User not found!", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                        Log_In_Page log = new Log_In_Page();
+                        this.Hide();
+                        log.ShowDialog();
+                        this.Hide();
+                    }
+
+                    con.Close();
                 }
-                else
-                {
-                    Menu menupage = new Menu();
-                    this.Hide();
-                    menupage.ShowDialog();
-                    this.Show();
-
-                    textBox1.Clear();
-                    textBox2.Clear();
-                    DialogResult = MessageBox.Show("User not found!", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-                }
-
-                con.Close();
+                
             }
 
             catch (Exception error)
@@ -70,14 +80,25 @@ namespace MPHBSMS
         {
             textBox1.Clear();
             textBox2.Clear();
+            textBox1.Focus();
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
-            textBox2.PasswordChar='*';
+            
         }
 
         private void Log_In_Page_Load(object sender, EventArgs e)
+        {
+            textBox1.Focus();
+        }
+
+        private void textBox2_TextChanged_1(object sender, EventArgs e)
+        {
+            textBox2.PasswordChar = '*';
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
         {
 
         }

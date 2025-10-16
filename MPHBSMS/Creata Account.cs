@@ -57,9 +57,8 @@ namespace MPHBSMS
             {
                 Form1 Obj = new Form1();
                 
-                Obj.Show();
                 this.Close();
-                
+                Obj.Show();
             }
                   
     catch (Exception error)
@@ -105,41 +104,52 @@ namespace MPHBSMS
         {
             try
             {
-                OleDbConnection con = new OleDbConnection(@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=|DataDirectory|\MPHBSMS.accdb");
-                con.Open();
-
-                string account = "insert into accounts ([name],[surname],[identityNumber],[password]) values (?,?,?,?)";
-                OleDbCommand com = new OleDbCommand(account, con);
-                com.Parameters.AddWithValue("?", textBox1.Text) ;
-                com.Parameters.AddWithValue("?", textBox2.Text);
-                com.Parameters.AddWithValue("?", textBox3.Text);
-                com.Parameters.AddWithValue("?", textBox5.Text);
-                if (textBox6.Text == "MPHb0x20M0H&CC")
+                DatabaseHelper.InitializeDatabase();
+                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
-                    com.ExecuteNonQuery();
-                    DialogResult = MessageBox.Show("Amin password is incorrect\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-                }
-                else
-                {
-                    com.ExecuteNonQuery();
-                    DialogResult = MessageBox.Show("Account created successfully\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-                }
-               
-                con.Close();
+                    con.Open();
 
-                textBox1.Clear();
-                textBox2.Clear();
-                textBox3.Clear();
-                textBox4.Clear();
-                textBox5.Clear();
-                textBox6.Clear();
+                    string account = "insert into accounts ([name],[surname],[identityNumber],[password]) values (?,?,?,?)";
+                    OleDbCommand com = new OleDbCommand(account, con);
+                    com.Parameters.AddWithValue("?", textBox1.Text);
+                    com.Parameters.AddWithValue("?", textBox2.Text);
+                    com.Parameters.AddWithValue("?", textBox3.Text);
+                    com.Parameters.AddWithValue("?", textBox5.Text);
+                    if (textBox6.Text == "MPHb0x20M0H&CC")
+                    {
+                        com.ExecuteNonQuery();
+                        DialogResult = MessageBox.Show("Admin password is incorrect\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        com.ExecuteNonQuery();
+                        DialogResult = MessageBox.Show("Account created successfully\n", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        textBox1.Clear();
+                        textBox2.Clear();
+                        textBox3.Clear();
+                        textBox4.Clear();
+                        textBox5.Clear();
+                        textBox6.Clear();
+                        textBox1.Focus();
+
+
+                        Log_In_Page bj = new Log_In_Page();
+                        this.Hide();
+                        bj.ShowDialog();
+                        this.Show();
+                    }
+
+                    con.Close();
+
+                   
+                }
             }
-                    
-    catch (Exception error)
-{
-    
-        DialogResult = MessageBox.Show("ERROR!!\n"+error.Message,"Marondera Provincial Hospital",MessageBoxButtons.RetryCancel,MessageBoxIcon.Error);
-}
+
+            catch (Exception error)
+            {
+
+                DialogResult = MessageBox.Show("ERROR!!\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+            }
 
         }
 
