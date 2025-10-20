@@ -44,7 +44,7 @@ namespace MPHBSMS
                         string surname = reader[1].ToString();
 
                         
-                       DialogResult = MessageBox.Show("Welcome " + name + " " + surname + "!", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                      MessageBox.Show("Welcome " + name + " " + surname + "!", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
                        
                         MPHBSMS.CurrentUser = reader[0].ToString().Trim();
 
@@ -56,7 +56,7 @@ namespace MPHBSMS
                         textBox1.Clear();
                         textBox2.Clear();
                         textBox1.Focus();
-                        DialogResult = MessageBox.Show("User not found!", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                         MessageBox.Show("User not found!", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
                        
                     }
 
@@ -67,7 +67,7 @@ namespace MPHBSMS
 
             catch (Exception error)
             {
-                DialogResult = MessageBox.Show("An error occured\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                 MessageBox.Show("An error occured\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
 
             }
         }

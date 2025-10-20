@@ -118,7 +118,7 @@ namespace MPHBSMS
                     if (textBox6.Text == "@admin")
                     {
                         com.ExecuteNonQuery();
-                        DialogResult = MessageBox.Show("Account successfully created\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                        MessageBox.Show("Account successfully created\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
                         Log_In_Page bj = new Log_In_Page();
                         this.Hide();
                         bj.ShowDialog();
@@ -126,7 +126,7 @@ namespace MPHBSMS
                     }
                     else
                     {
-                        DialogResult = MessageBox.Show("Failed to create an account\n", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Failed to create an account\n", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         textBox1.Clear();
                         textBox2.Clear();
                         textBox3.Clear();
