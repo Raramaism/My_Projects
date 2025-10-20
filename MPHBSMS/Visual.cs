@@ -42,7 +42,7 @@ namespace MPHBSMS
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
                 con.Open();
-                string com = "select * from mphtable";
+                string com = "select * from tblPatientMovement";
                 OleDbCommand comm = new OleDbCommand(com, con);
                 OleDbDataAdapter da = new OleDbDataAdapter(comm);
                 DataTable dt = new DataTable();
@@ -104,7 +104,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -123,7 +123,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -185,7 +185,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement  WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -204,7 +204,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -266,7 +266,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -285,7 +285,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -347,7 +347,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -366,7 +366,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -428,7 +428,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -447,7 +447,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -509,7 +509,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -528,7 +528,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -590,7 +590,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -609,7 +609,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement  WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -671,7 +671,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMaster WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -690,7 +690,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMaster WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -753,7 +753,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM mphtable WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(*) FROM tblPatientMaster WHERE [ward] = ? AND [category] = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -772,7 +772,7 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM mphtable WHERE [ward] = ?"; // Selective columns recommended
+                    string myquaery = "SELECT [hospitlNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMaster WHERE [ward] = ?"; // Selective columns recommended
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -797,7 +797,7 @@ namespace MPHBSMS
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
                 con.Open();
-                string com = "select * from mphtable";
+                string com = "select * from tblPatientMaster";
                 OleDbCommand comm = new OleDbCommand(com, con);
                 OleDbDataAdapter da = new OleDbDataAdapter(comm);
                 DataTable dt = new DataTable();
@@ -846,7 +846,7 @@ namespace MPHBSMS
         return;
     }
 
-    string query = "SELECT [hospitalNumber], [name], [surname], [gender], [ward], [category], [date], [time],[enteredBy] FROM mphtable WHERE ";
+    string query = "SELECT [hospitalNumber], [name], [surname], [gender], [ward], [category], [date], [time],[enteredBy] FROM tblPatientMovement  WHERE ";
 
     switch (criteria)
     {

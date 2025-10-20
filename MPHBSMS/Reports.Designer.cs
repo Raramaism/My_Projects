@@ -117,6 +117,7 @@
             this.laborWardToolStripMenuItem.Name = "laborWardToolStripMenuItem";
             this.laborWardToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
             this.laborWardToolStripMenuItem.Text = "Labor Ward";
+            this.laborWardToolStripMenuItem.Click += new System.EventHandler(this.laborWardToolStripMenuItem_Click);
             // 
             // accidentAndEmeregencyToolStripMenuItem
             // 

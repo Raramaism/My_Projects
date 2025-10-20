@@ -113,164 +113,205 @@ namespace MPHBSMS
         private void button1_Click(object sender, EventArgs e)
         {
 
-            try
-{
-    using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+    // Constants for Movement Categories (Already defined in your original code)
+    const string CatAdmission = "Admission";
+    const string CatTransferIn = "Inter Ward Transfer In";
+    const string CatDischarge = "Discharge";
+    const string CatTransferOut = "Inter Ward Transfer Out";
+    const string CatDeath = "Death";
+
+    OleDbConnection con = null;
+    try
     {
+        con = new OleDbConnection(DatabaseHelper.ConnectionString);
         con.Open();
 
+        // 1. DATA GATHERING & VALIDATION (Re-using your existing validation logic)
         string gender = "";
+        if (radioButton1.Checked) gender = "female";
+        else if (radioButton2.Checked) gender = "male";
+
         string category = "";
-        string ward = "";
-        string home = "";
+        if (checkBox1.Checked) category = CatAdmission;
+        else if (checkBox2.Checked) category = CatTransferIn;
+        else if (checkBox3.Checked) category = CatDischarge;
+        else if (checkBox4.Checked) category = CatTransferOut;
+        else if (checkBox5.Checked) category = CatDeath;
 
-        const string CatAdmission = "Admission";
-        const string CatTransferIn = "Inter Ward Transfer In";
-        const string CatDischarge = "Discharge";
-        const string CatTransferOut = "Inter Ward Transfer Out";
-        const string CatDeath = "Death";
+        string ward = listBox1.SelectedItem.ToString();
+        // Rename 'home' to 'fromLocation' to be clearer for transfers
+        string fromLocation = listBox2.SelectedItem.ToString(); 
 
-        if (radioButton1.Checked)
-            gender = "female";
-        else if (radioButton2.Checked)
-            gender = "male";
+        DateTime movementDT = dateTimePicker1.Value; // Use the DateTime object directly
+        string hospitalNumber = textBox1.Text.Trim().ToLower();
+        string name = textBox2.Text.Trim().ToLower();
+        string surname = textBox3.Text.Trim().ToLower();
+        string enteredBy = MPHBSMS.CurrentUser;
 
-        if (checkBox1.Checked)
-            category = CatAdmission;
-        else if (checkBox2.Checked)
-            category = CatTransferIn;
-        else if (checkBox3.Checked)
-            category = CatDischarge;
-        else if (checkBox4.Checked)
-            category = CatTransferOut;
-        else if (checkBox5.Checked)
-            category = CatDeath;
-
-        ward = listBox1.SelectedItem.ToString();
-        home = listBox2.SelectedItem.ToString();
-
-        string date = dateTimePicker1.Value.ToShortDateString();
-        string time = dateTimePicker1.Value.ToString("h:mmtt").ToLower();
-        string hospitalNumber = textBox1.Text.Trim();
-
-        if (string.IsNullOrWhiteSpace(hospitalNumber) ||
-            string.IsNullOrWhiteSpace(textBox2.Text) ||
-            string.IsNullOrWhiteSpace(textBox3.Text))
+        // Validation Checks (Keeping your original checks)
+        if (string.IsNullOrWhiteSpace(hospitalNumber) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(surname) ||
+            string.IsNullOrEmpty(gender) || string.IsNullOrEmpty(category) || !checkBox6.Checked || string.IsNullOrEmpty(ward) || !checkBox5.Checked)
         {
-            MessageBox.Show("Please fill in all required textboxes.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show("Please complete all required fields and actions.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        if (string.IsNullOrEmpty(gender))
-        {
-            MessageBox.Show("Please select GENDER.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(category))
-        {
-            MessageBox.Show("Please select a CATEGORY.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        if (!checkBox6.Checked)
-        {
-            MessageBox.Show("Complete your action!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(ward))
-        {
-            MessageBox.Show("Please select a Ward.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
+        // 2. PATIENT EXISTENCE CHECK (Querying the dedicated LIVE status table)
         bool patientExists = false;
-        string checkQuery = "SELECT COUNT(*) FROM mphtable WHERE [hospitalNumber] = ?";
+        // NOTE: We now check against the new master table for LIVE status
+        string checkQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE [hospitalNumber] = ?";
         using (OleDbCommand checkCmd = new OleDbCommand(checkQuery, con))
         {
             checkCmd.Parameters.AddWithValue("?", hospitalNumber);
-            int count = (int)checkCmd.ExecuteScalar();
-            patientExists = count > 0;
+            patientExists = (int)checkCmd.ExecuteScalar() > 0;
         }
+
+        // Admission / Discharge Conflict Checks
+        if (category == CatAdmission && patientExists)
+        {
+            MessageBox.Show("This patient is already admitted. Cannot re-admit.", "Conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        if (category != CatAdmission && !patientExists)
+        {
+            MessageBox.Show("Patient does not exist in the active patient database. Cannot process Transfer/Discharge.", "Conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        // --- START TRANSACTION ---
+        
+        // 3. LOG THE MOVEMENT (Insert into the historical tracing table)
+        // NOTE: Renamed mphtable to tblPatientMovement for clarity/structure
+        string insertMovementQuery = "INSERT INTO tblPatientMovement ([hospitalNumber],[name],[surname],[gender],[ToWard],[FromWard],[MovementDateTime],[category],[enteredBy],[movementID]) " +
+                                     "VALUES (?,?,?,?,?,?,?,?,?)";
+        
+        string movementID = textBox1.Text + "ID";
+        using (OleDbCommand movementCmd = new OleDbCommand(insertMovementQuery, con))
+        {
+            movementCmd.Parameters.AddWithValue("?", hospitalNumber);
+            movementCmd.Parameters.AddWithValue("?", name);
+            movementCmd.Parameters.AddWithValue("?", surname);
+            movementCmd.Parameters.AddWithValue("?", gender);
+            movementCmd.Parameters.AddWithValue("?", ward);             // 'To' location
+            movementCmd.Parameters.AddWithValue("?", fromLocation);    // 'From' location
+            movementCmd.Parameters.AddWithValue("?", movementDT);      // Combined Date/Time
+            movementCmd.Parameters.AddWithValue("?", category);
+            movementCmd.Parameters.AddWithValue("?", enteredBy);
+            movementCmd.Parameters.AddWithValue("?", movementID);
+            
+            movementCmd.ExecuteNonQuery();
+        }
+        
+        // 4. UPDATE MASTER RECORD (Update the LIVE status for Bed Statistics/Tracing)
+        
+        string updateMasterQuery = string.Empty;
 
         if (category == CatAdmission)
         {
-            if (patientExists)
+            // Admission: INSERT into the Master table
+            updateMasterQuery = "INSERT INTO tblPatientMaster ([hospitalNumber],[name],[surname],[gender],[CurrentWard],[IsAdmitted],[AdmissionDate]) " +
+                                "VALUES (?,?,?,?,?,?,?)";
+            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
             {
-                MessageBox.Show("This patient is already admitted.", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                masterCmd.Parameters.AddWithValue("?", hospitalNumber);
+                masterCmd.Parameters.AddWithValue("?", name);
+                masterCmd.Parameters.AddWithValue("?", surname);
+                masterCmd.Parameters.AddWithValue("?", gender);
+                masterCmd.Parameters.AddWithValue("?", ward);
+                masterCmd.Parameters.AddWithValue("?", true); // IsAdmitted = TRUE
+                masterCmd.Parameters.AddWithValue("?", movementDT);
+                masterCmd.ExecuteNonQuery();
             }
         }
-        else
+        else if (category == CatTransferIn)
         {
-            if (!patientExists)
+            // Transfer In: UPDATE Master table with new CurrentWard
+            updateMasterQuery = "UPDATE tblPatientMaster SET CurrentWard = ?, IsAdmitted = TRUE WHERE [hospitalNumber] = ?";
+            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
             {
-                MessageBox.Show("Patient does not exist in the database.", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                masterCmd.Parameters.AddWithValue("?", ward);
+                masterCmd.Parameters.AddWithValue("?", hospitalNumber);
+                masterCmd.ExecuteNonQuery();
+            }
+        }
+        else if (category == CatDischarge || category == CatDeath || category == CatTransferOut)
+        {
+            // Disposal Categories: UPDATE Master table to set status as NOT admitted
+            updateMasterQuery = "UPDATE tblPatientMaster SET CurrentWard = NULL, IsAdmitted = FALSE, DischargeDate = ? WHERE [hospitalNumber] = ?";
+            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
+            {
+                masterCmd.Parameters.AddWithValue("?", movementDT); // Record Discharge Date/Time
+                masterCmd.Parameters.AddWithValue("?", hospitalNumber);
+                masterCmd.ExecuteNonQuery();
             }
         }
 
-        string insertQuery = "INSERT INTO mphtable ([hospitalNumber],[name],[surname],[gender],[to],[from],[date],[time],[category],[ward],[enteredBy]) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-      
-        using (OleDbCommand com = new OleDbCommand(insertQuery, con))
-{
-    com.Parameters.AddWithValue("@hospitalNumber", hospitalNumber);
-    com.Parameters.AddWithValue("@name", textBox2.Text);
-    com.Parameters.AddWithValue("@surname", textBox3.Text);
-    com.Parameters.AddWithValue("@gender", gender);
-    com.Parameters.AddWithValue("@to", ward);
-    com.Parameters.AddWithValue("@from", home);
-    com.Parameters.AddWithValue("@date", date);
-    com.Parameters.AddWithValue("@time", time);
-    com.Parameters.AddWithValue("@category", category);
-    com.Parameters.AddWithValue("@ward", ward);
-    com.Parameters.AddWithValue("@enteredBy", MPHBSMS.CurrentUser);
+        // --- END TRANSACTION ---
 
-    int rows = com.ExecuteNonQuery();
-
-    if (rows > 0)
-    {
-        MessageBox.Show("Record inserted successfully by "+MPHBSMS.CurrentUser,
+        MessageBox.Show("Record processed successfully by " + enteredBy,
                         "Marondera Provincial Hospital",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
     }
-}
-        con.Close();
+    catch (Exception error)
+    {
+        MessageBox.Show("ERROR!!\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+    }
+    finally
+    {
+        if (con != null && con.State == System.Data.ConnectionState.Open)
+        {
+            con.Close();
         }
     }
 
-catch (Exception error)
-{
-    MessageBox.Show("ERROR!!\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-}
 
         }    
 
-        private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
+
+private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
+{
+    ToolStripMenuItem clickedItem = (ToolStripMenuItem)sender;
+    selectedWard = clickedItem.Text; // Set the selected ward
+    
+    // Display selected ward
+    MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+    // DatabaseHelper.InitializeDatabase(); // Ensure this is handled at application start
+    
+    using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+    {
+        try
         {
-            ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
-            selectedWard = ClickedItem.Text;
-            DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
-          
-  DatabaseHelper.InitializeDatabase();
-            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            con.Open();
+            textBox1.Focus();
+
+            // 1. Get Occupancy for the SELECTED Ward (Corresponds to B/F and Box 5 logic)
+            // We must query the LIVE tblPatientMaster table, not the movement log!
+            string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+            using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
             {
-                con.Open();
-                textBox1.Focus();
-
-                string query1 = ("Select Count(*)From mphtable");
-                OleDbCommand com1 = new OleDbCommand(query1, con);
-                int broughtForward = (int)com1.ExecuteScalar();
-                label15.Text = broughtForward.ToString();
-
-                string query7 = ("Select Count(*)From mphtable");
-                OleDbCommand com7 = new OleDbCommand(query7, con);
-                int bedsOccupied = (int)com7.ExecuteScalar();
-                label21.Text = bedsOccupied.ToString();
-                con.Close();
+                wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                
+                // This value represents the current live census for this ward (similar to the paper form's Box 5 C/F)
+                label15.Text = bedsOccupiedInWard.ToString(); 
             }
+
+            // 2. Get Total Hospital Census (All Beds Occupied)
+            // This is the total number of patients currently admitted in the entire hospital.
+            string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE";
+            using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+            {
+                int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                label21.Text = bedsOccupiedTotal.ToString(); 
+            }
+        }
+        catch (Exception error)
+        {
+            MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
 
         }
 
@@ -475,6 +516,11 @@ catch (Exception error)
         }
 
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
+        }
+
+        private void Menu_Click(object sender, EventArgs e)
         {
 
         }

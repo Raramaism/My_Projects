@@ -92,6 +92,11 @@
       <DependentUpon>Menu.cs</DependentUpon>
     </Compile>
     <Compile Include="MPHBSMS.cs" />
+    <Compile Include="MPHDATABASEDataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MPHDATABASEDataSet.xsd</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reports.cs">
@@ -133,6 +138,17 @@
     <EmbeddedResource Include="Visual.resx">
       <DependentUpon>Visual.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="MPHDATABASEDataSet.xsc">
+      <DependentUpon>MPHDATABASEDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="MPHDATABASEDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>MPHDATABASEDataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="MPHDATABASEDataSet.xss">
+      <DependentUpon>MPHDATABASEDataSet.xsd</DependentUpon>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -170,10 +186,9 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Content Include="MPHBSMS.accdb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <Content Include="MPHDATABASE.accdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -56,7 +56,6 @@ namespace MPHBSMS
             try
             {
                 Form1 Obj = new Form1();
-                
                 this.Close();
                 Obj.Show();
             }
@@ -90,6 +89,7 @@ namespace MPHBSMS
                 textBox4.Clear();
                 textBox5.Clear();
                 textBox6.Clear();
+                textBox1.Focus();
             }
                     
     catch (Exception error)
@@ -109,21 +109,24 @@ namespace MPHBSMS
                 {
                     con.Open();
 
-                    string account = "insert into accounts ([name],[surname],[identityNumber],[password]) values (?,?,?,?)";
+                    string account = "insert into userAccounts ([name],[surname],[idNumber],[password]) values (?,?,?,?)";
                     OleDbCommand com = new OleDbCommand(account, con);
                     com.Parameters.AddWithValue("?", textBox1.Text);
                     com.Parameters.AddWithValue("?", textBox2.Text);
                     com.Parameters.AddWithValue("?", textBox3.Text);
                     com.Parameters.AddWithValue("?", textBox5.Text);
-                    if (textBox6.Text == "MPHb0x20M0H&CC")
+                    if (textBox6.Text == "@admin")
                     {
                         com.ExecuteNonQuery();
-                        DialogResult = MessageBox.Show("Admin password is incorrect\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                        DialogResult = MessageBox.Show("Account successfully created\n", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                        Log_In_Page bj = new Log_In_Page();
+                        this.Hide();
+                        bj.ShowDialog();
+                        this.Show();  
                     }
                     else
                     {
-                        com.ExecuteNonQuery();
-                        DialogResult = MessageBox.Show("Account created successfully\n", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        DialogResult = MessageBox.Show("Failed to create an account\n", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         textBox1.Clear();
                         textBox2.Clear();
                         textBox3.Clear();
@@ -131,13 +134,10 @@ namespace MPHBSMS
                         textBox5.Clear();
                         textBox6.Clear();
                         textBox1.Focus();
-
-
-                        Log_In_Page bj = new Log_In_Page();
-                        this.Hide();
-                        bj.ShowDialog();
-                        this.Show();
+                       
                     }
+
+                   
 
                     con.Close();
 

@@ -22,5 +22,10 @@ namespace MPHBSMS
 
             this.reportViewer1.RefreshReport();
         }
+
+        private void laborWardToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

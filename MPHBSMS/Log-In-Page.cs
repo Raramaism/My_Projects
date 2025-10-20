@@ -31,10 +31,10 @@ namespace MPHBSMS
                     con.Open();
 
                     textBox1.Focus();
-                    string logIn = "select [name],[surname],[identityNumber],[password] FROM accounts WHERE ([identityNumber] = ? AND [password]=?)";
+                    string logIn = "select [name],[surname],[idNumber],[password] FROM userAccounts WHERE ([idNumber] = ? AND [password]=?)";
                     OleDbCommand com = new OleDbCommand(logIn, con);
 
-                    com.Parameters.AddWithValue("@identyNumber", textBox1.Text.Trim());
+                    com.Parameters.AddWithValue("@idNumber", textBox1.Text.Trim());
                     com.Parameters.AddWithValue("@password", textBox2.Text.Trim());
                     OleDbDataReader reader = com.ExecuteReader();
 
@@ -43,25 +43,21 @@ namespace MPHBSMS
                         string name = reader[0].ToString();
                         string surname = reader[1].ToString();
 
-                        DialogResult = MessageBox.Show("Welcome " + name + " " + surname + "!", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        
+                       DialogResult = MessageBox.Show("Welcome " + name + " " + surname + "!", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                       
                         MPHBSMS.CurrentUser = reader[0].ToString().Trim();
 
                         Menu menupage = new Menu();
                         menupage.Show();
-                        this.Hide();
-                    }
-                    else
+                        this.Hide(); 
+                    } else 
                     {
-
                         textBox1.Clear();
                         textBox2.Clear();
                         textBox1.Focus();
-
                         DialogResult = MessageBox.Show("User not found!", "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-                        Log_In_Page log = new Log_In_Page();
-                        this.Hide();
-                        log.ShowDialog();
-                        this.Hide();
+                       
                     }
 
                     con.Close();
@@ -99,6 +95,11 @@ namespace MPHBSMS
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
         {
 
         }
