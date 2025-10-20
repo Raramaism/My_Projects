@@ -66,6 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="%24R9Q40B1.cs" />
     <Compile Include="Creata Account.cs">
       <SubType>Form</SubType>
     </Compile>
