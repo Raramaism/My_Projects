@@ -25,7 +25,6 @@ namespace MPHBSMS
         {
             try
             {
-                DatabaseHelper.InitializeDatabase();
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
