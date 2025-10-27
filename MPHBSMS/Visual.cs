@@ -42,7 +42,7 @@ namespace MPHBSMS
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
                 con.Open();
-                string com = "select * from tblPatientMovement";
+                string com = "select * from tblPatientMaster";
                 OleDbCommand comm = new OleDbCommand(com, con);
                 OleDbDataAdapter da = new OleDbDataAdapter(comm);
                 DataTable dt = new DataTable();
@@ -70,15 +70,16 @@ namespace MPHBSMS
             dataGridView2.Rows.Clear();
             textBox1.Clear();
 
+
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
             var metrics = new Dictionary<string, string>
 {
     {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
+    {"InterWardTransferIn", "InterWardTransferIn"},
     {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
+    {"InterWardTransferOut", "InterWardTransferOut"},
     {"Death", "Death"}
 };
 
@@ -87,12 +88,11 @@ namespace MPHBSMS
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
-
+                   
                     chart1.Titles.Clear();
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
-                    chart1.ChartAreas[0].AxisX.Title = "Category";
-                    chart1.ChartAreas[0].AxisY.Title = "Count";
+                    chart1.ChartAreas[0].AxisX.Title = "Count";
+                    chart1.ChartAreas[0].AxisY.Title = "Catigory";
 
                     var activitySeries = chart1.Series.Add("Activity Count");
                     activitySeries.ChartType = SeriesChartType.Column;
@@ -104,11 +104,12 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
-                            com.Parameters.AddWithValue("?", ward);
+               
                             com.Parameters.AddWithValue("?", categoryValue);
+                            com.Parameters.AddWithValue("?", ward);
 
                             int count = 0;
                             object result = com.ExecuteScalar();
@@ -123,7 +124,8 @@ namespace MPHBSMS
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
+                    chart1.Series.Clear();
+                    string myquaery = /*"SELECT * FROM tblPatientMaster WHERE [ward] = ? "*/ "SELECT * FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE [ward] = ?";
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -822,6 +824,36 @@ namespace MPHBSMS
 
                 con.Close();
             }
+
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                con.Open();
+                string com = "select * from tblPatientMaster";
+                OleDbCommand comm = new OleDbCommand(com, con);
+                OleDbDataAdapter da = new OleDbDataAdapter(comm);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                dataGridView1.DataSource = dt;
+                chart1.Visible = false;
+                dataGridView2.Visible = false;
+
+                comboBox1.Items.AddRange(new string[]
+    {
+        "Hospital Number",
+        "Name",
+        "Surname",
+        "Category",
+        "Ward"
+    });
+                comboBox1.SelectedIndex = 0; // Default selection
+
+                dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+                dataGridView1.ReadOnly = true;
+                dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+
+                con.Close();
+            }
+
         }
 
         private void chart1_Click(object sender, EventArgs e)
@@ -846,7 +878,7 @@ namespace MPHBSMS
         return;
     }
 
-    string query = "SELECT [hospitalNumber], [name], [surname], [gender], [ward], [category], [date], [time],[enteredBy] FROM tblPatientMovement  WHERE ";
+    string query = "SELECT * FROM tblPatientMaster  WHERE ";
 
     switch (criteria)
     {
