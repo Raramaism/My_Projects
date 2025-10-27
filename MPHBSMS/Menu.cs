@@ -142,9 +142,9 @@ namespace MPHBSMS
         {
             // Constants for Movement Categories
 const string CatAdmission = "Admission";
-const string CatTransferIn = "Inter Ward Transfer In";
+const string CatTransferIn = "InterWardTransferIn";
 const string CatDischarge = "Discharge";
-const string CatTransferOut = "Inter Ward Transfer Out";
+const string CatTransferOut = "InterWardTransferOut";
 const string CatDeath = "Death";
 
 // Assuming this code is inside a method like 'button1_Click'
@@ -452,6 +452,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void paedatricWardToolStripMenuItem_Click(object sender, EventArgs e)
@@ -459,6 +546,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void maleWardToolStripMenuItem_Click(object sender, EventArgs e)
@@ -466,6 +640,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void postNatalWardToolStripMenuItem_Click(object sender, EventArgs e)
@@ -473,6 +734,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void neoNatalWardToolStripMenuItem_Click(object sender, EventArgs e)
@@ -480,6 +828,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void anteNatalWardToolStripMenuItem_Click(object sender, EventArgs e)
@@ -487,6 +922,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void labourWardToolStripMenuItem_Click(object sender, EventArgs e)
@@ -494,6 +1016,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
@@ -633,6 +1242,93 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
+
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
+
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
+
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
+
+
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
+
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+    
         }
 
         private void accidentAndEmergenceToolStripMenuItem_Click_1(object sender, EventArgs e)
@@ -640,49 +1336,92 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             selectedWard = ClickedItem.Text;
             DialogResult = MessageBox.Show("You selected: \n" + selectedWard, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
-           
+
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
-                con.Open();
-                textBox1.Focus();
+                try
+                {
+                    con.Open();
+                    textBox1.Focus();
 
-                string query1 = ("Select Count(selectedWard)FROM tblPatientMaster");
-                OleDbCommand com1 = new OleDbCommand(query1, con);
-                int broughtForward = (int)com1.ExecuteScalar();
-                label15.Text = broughtForward.ToString();
+                    // all admissions
+                    string wardOccupancyQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand wardOccupancyCmd = new OleDbCommand(wardOccupancyQuery, con))
+                    {
+                        wardOccupancyCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedInWard = (int)wardOccupancyCmd.ExecuteScalar();
+                        label15.Text = bedsOccupiedInWard.ToString();
+                    }
 
-                string query2 = ("Select Count(selectedWard)From tblPatientMaster WHERE [category] = admissions ");
-                OleDbCommand com2 = new OleDbCommand(query2, con);
-                int admission = (int)com2.ExecuteScalar();
-                label21.Text = admission.ToString();
+                    // admission only
+                    string wardAdmissionsQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                    {
+                        const string category = "Admission";
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                        wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                        int admissionInWard = (int)wardAdmissionsCmd.ExecuteScalar();
+                        label16.Text = admissionInWard.ToString();
+                    }
 
-                string query3 = ("Select Count(selectedWard)From tblPatientMaster WHERE [category] = transferIn ");
-                OleDbCommand com3 = new OleDbCommand(query3, con);
-                int transferIn = (int)com3.ExecuteScalar();
-                label21.Text =transferIn.ToString();
+                    //     interward transfer In only
+                    string wardInterwardTransferInQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferInCmd = new OleDbCommand(wardInterwardTransferInQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer In";
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferInCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferInInWard = (int)wardInterwardTransferInCmd.ExecuteScalar();
+                        label17.Text = interwardTransferInInWard.ToString();
+                    }
+
+                    // discharge only
+                    string wardDischargeQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDischargeCmd = new OleDbCommand(wardDischargeQuery, con))
+                    {
+                        const string category = "Discharge";
+                        wardDischargeCmd.Parameters.AddWithValue("?", category);
+                        wardDischargeCmd.Parameters.AddWithValue("?", selectedWard);
+                        int dischargeInWard = (int)wardDischargeCmd.ExecuteScalar();
+                        label18.Text = dischargeInWard.ToString();
+                    }
+
+                    // interward Transfer Out only
+                    string wardInterwardTransferOutQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardInterwardTransferOutCmd = new OleDbCommand(wardInterwardTransferOutQuery, con))
+                    {
+                        const string category = "Inter Ward Transfer Out";
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", category);
+                        wardInterwardTransferOutCmd.Parameters.AddWithValue("?", selectedWard);
+                        int interwardTransferOutInWard = (int)wardInterwardTransferOutCmd.ExecuteScalar();
+                        label19.Text = interwardTransferOutInWard.ToString();
+                    }
 
 
-                string query4 = ("Select Count(selectedWard)From tblPatientMaster WHERE [category] = discharge ");
-                OleDbCommand com4 = new OleDbCommand(query4, con);
-                int discharge = (int)com4.ExecuteScalar();
-                label21.Text = discharge.ToString();
+                    // death only
+                    string wardDeathQuery = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
+                    using (OleDbCommand wardDeathCmd = new OleDbCommand(wardDeathQuery, con))
+                    {
+                        const string category = "Death";
+                        wardDeathCmd.Parameters.AddWithValue("?", category);
+                        wardDeathCmd.Parameters.AddWithValue("?", selectedWard);
+                        int deathInWard = (int)wardDeathCmd.ExecuteScalar();
+                        label20.Text = deathInWard.ToString();
+                    }
 
-                string query5 = ("Select Count(selectedWard)From tblPatientMaster WHERE [category] = TransferOut ");
-                OleDbCommand com5 = new OleDbCommand(query5, con);
-                int transferOut = (int)com5.ExecuteScalar();
-                label21.Text = transferOut.ToString();
-
-                string query6 = ("Select Count(selectedWard)From tblPatientMaster WHERE [category] = deaths ");
-                OleDbCommand com6 = new OleDbCommand(query6, con);
-                int deaths = (int)com6.ExecuteScalar();
-                label21.Text = deaths.ToString();
-
-                string query7 = ("Select Count(selectedWard)From tblPatientMaster");
-                OleDbCommand com7 = new OleDbCommand(query6, con);
-                int bedsOccupied = (int)com7.ExecuteScalar();
-                label21.Text = bedsOccupied.ToString();
-
-                con.Close();
+                    // all beds occupied
+                    string totalCensusQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE IsAdmitted = TRUE AND CurrentWard = ?";
+                    using (OleDbCommand totalCensusCmd = new OleDbCommand(totalCensusQuery, con))
+                    {
+                        totalCensusCmd.Parameters.AddWithValue("?", selectedWard);
+                        int bedsOccupiedTotal = (int)totalCensusCmd.ExecuteScalar();
+                        label21.Text = bedsOccupiedTotal.ToString();
+                    }
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error retrieving statistics:\n" + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
 
         }
