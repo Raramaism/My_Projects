@@ -62,70 +62,95 @@ namespace MPHBSMS
 
         private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
             textBox1.Clear();
 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWardTransferIn", "InterWardTransferIn"},
-    {"Discharge", "Discharge"},
-    {"InterWardTransferOut", "InterWardTransferOut"},
-    {"Death", "Death"}
-};
-
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                   
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (Using Indexing for Color)
+                    // ----------------------------------------------------
+
+                    // Ensure chart is clear before adding new data
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
-                    chart1.ChartAreas[0].AxisX.Title = "Count";
-                    chart1.ChartAreas[0].AxisY.Title = "Catigory";
+                    chart1.ChartAreas[0].AxisX.Title = "Category";
+                    chart1.ChartAreas[0].AxisY.Title = "Count";
 
                     var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
+                    activitySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
                     activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    activitySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY: Get all counts in one database call
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE PM.currentWard = ? " ;
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
+                        com.Parameters.AddWithValue("?", ward);
 
-                        string commandText = "SELECT COUNT(TM.hospitalNumber) AS TotalAdmissions FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE TM.category = ? AND PM.currentWard = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-               
-                            com.Parameters.AddWithValue("?", categoryValue);
-                            com.Parameters.AddWithValue("?", ward);
+                            // We'll track the index of the point as we add it
+                            int pointIndex = 0;
 
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                // Add point (no local 'point' variable needed)
+                                activitySeries.Points.AddXY(category, count);
+
+                                // Get a direct reference to the LAST ADDED point via its index
+                                System.Drawing.Color barColor = System.Drawing.Color.Gray;
+
+                                if (categoryColors.ContainsKey(category))
+                                {
+                                    barColor = categoryColors[category];
+                                }
+
+                                // Set the color property directly on the point at the current index
+                                activitySeries.Points[pointIndex].Color = barColor;
+
+                                pointIndex++;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    chart1.Series.Clear();
-                    string myquaery = /*"SELECT * FROM tblPatientMaster WHERE [ward] = ? "*/ "SELECT * FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE [ward] = ?";
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (CORRECTED QUERY)
+                    // ----------------------------------------------------
+
+                    // Query to display all joined patient and movement details for the selected ward
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = ?";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
                     comm.Parameters.AddWithValue("?", ward);
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
@@ -159,9 +184,9 @@ namespace MPHBSMS
             var metrics = new Dictionary<string, string>
 {
     {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
+    {"InterWardTransferIn", "InterWardTransferIn"},
     {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
+    {"InterWardTransferOut", "InterWardTransferOut"},
     {"Death", "Death"}
 };
 
@@ -187,7 +212,7 @@ namespace MPHBSMS
                         string seriesName = metric.Key;
                         string categoryValue = metric.Value;
 
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement  WHERE [ward] = ? AND [category] = ?";
+                        string commandText = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE PM.currentWard = ? AND TM.category = ?";
                         using (OleDbCommand com = new OleDbCommand(commandText, con))
                         {
                             com.Parameters.AddWithValue("?", ward);
@@ -799,7 +824,8 @@ namespace MPHBSMS
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
                 con.Open();
-                string com = "select * from tblPatientMaster";
+               // string com = "SELECT tblPatientMaster.hospitalNumber,tblPatientMaster.name,tblPatientMaster.surname,tblPatientMaster.gender,tblPatientMaster.currentWard, tblPatientMaster.isAdmitted,tblPatientMaster.admissionDate,tblPatientMaster.dischargeDate,tblPatientMovement.MovementDateTime,tblPatientMovement.toWard,tblPatientMovement.fromWard,tblPatientMovement.category,tblPatientMovement.enteredBy FROM tblPatientMaster JOIN tblPatientMovement ON tblPatientMaster.hospitalNumber = tblPatientMovement.hospitalNumber ORDER BY tblPatientMaster.hospitalNumber ASC"; 
+              string com = " SELECT tblPatientMaster.hospitalNumber, tblPatientMaster.name, tblPatientMaster.surname, tblPatientMaster.gender, tblPatientMaster.currentWard, tblPatientMaster.isAdmitted, tblPatientMaster.admissionDate, tblPatientMaster.dischargeDate, tblPatientMovement.MovementDateTime, tblPatientMovement.toWard, tblPatientMovement.fromWard, tblPatientMovement.category, tblPatientMovement.enteredBy FROM tblPatientMaster INNER JOIN tblPatientMovement ON tblPatientMaster.hospitalNumber = tblPatientMovement.hospitalNumber ORDER BY tblPatientMaster.hospitalNumber ASC";
                 OleDbCommand comm = new OleDbCommand(com, con);
                 OleDbDataAdapter da = new OleDbDataAdapter(comm);
                 DataTable dt = new DataTable();
@@ -943,6 +969,11 @@ namespace MPHBSMS
         MessageBox.Show("Error performing search:\n" + ex.Message, "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
+
+        }
+
+        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
 
         }
     }
