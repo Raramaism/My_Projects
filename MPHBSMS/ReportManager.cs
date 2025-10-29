@@ -4,12 +4,9 @@ using System.IO;
 using System.Linq;
 
 // ==========================================================
-// 1. HELPER DEFINITIONS (Must be defined here for accessibility)
+// 1. HELPER DEFINITIONS
 // ==========================================================
 
-/// <summary>
-/// Defines the conversation flow states.
-/// </summary>
 public enum ConversationState
 {
     Greeting,
@@ -23,9 +20,6 @@ public enum ConversationState
     Complete
 }
 
-/// <summary>
-/// Stores the parameters gathered during the conversation.
-/// </summary>
 public class ReportRequest
 {
     private List<string> _categories;
@@ -38,7 +32,6 @@ public class ReportRequest
     public string FileFormat { get; set; }
     public string ReportName { get; set; }
 
-    // Explicit list property with initialization in constructor (C# < 6.0 compatible)
     public List<string> Categories
     {
         get { return _categories; }
@@ -47,14 +40,10 @@ public class ReportRequest
 
     public ReportRequest()
     {
-        // Initialize list in constructor for compatibility
         _categories = new List<string>();
     }
 }
 
-/// <summary>
-/// Used to return success/failure messages from methods.
-/// </summary>
 public class ProcessResult
 {
     public bool Success { get; set; }
@@ -68,7 +57,7 @@ public class ProcessResult
 
 public class ReportManager
 {
-    // --- Fields and Properties (No initializers here for C# < 6.0 compatibility) ---
+    // --- Fields and Properties ---
     private ConversationState _currentState;
     public ConversationState CurrentState
     {
@@ -90,18 +79,14 @@ public class ReportManager
         "Admission", "Deaths", "Transfers", "Discharges", "Consultations"
     };
 
-    // --- Constructor (All initialization moved here) ---
+    // --- Constructor ---
     public ReportManager()
     {
-        // Initialize properties explicitly
         CurrentRequest = new ReportRequest();
         _currentState = ConversationState.Greeting;
-
         ReportDirectoryPath = InitializeReportDirectory();
-        _currentState = ConversationState.AskForPrimaryAction;
     }
 
-    // 💡 Initialization
     private string InitializeReportDirectory()
     {
         try
@@ -142,7 +127,6 @@ public class ReportManager
         errorMessage = null;
         bool isValid = false;
 
-        // Define out variables explicitly before calling method (C# < 7.0 syntax fix)
         DateTime startDate;
         DateTime endDate;
         List<string> selectedCategories;
@@ -152,8 +136,11 @@ public class ReportManager
         switch (CurrentState)
         {
             case ConversationState.AskForPrimaryAction:
-                if (input.Equals("GenerateReport", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.PrimaryAction = "GenerateReport"; isValid = true; }
-                else if (input.Equals("OpenExisting", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.PrimaryAction = "OpenExisting"; isValid = true; }
+                // Added friendly synonyms: "Generate", "Open"
+                if (input.Equals("GenerateReport", StringComparison.OrdinalIgnoreCase) || input.Equals("Generate", StringComparison.OrdinalIgnoreCase))
+                { CurrentRequest.PrimaryAction = "GenerateReport"; isValid = true; }
+                else if (input.Equals("OpenExisting", StringComparison.OrdinalIgnoreCase) || input.Equals("Open", StringComparison.OrdinalIgnoreCase))
+                { CurrentRequest.PrimaryAction = "OpenExisting"; isValid = true; }
                 else { errorMessage = "Please enter 'GenerateReport' or 'OpenExisting'."; }
                 break;
 
@@ -163,7 +150,8 @@ public class ReportManager
                 break;
 
             case ConversationState.AskForDataScope:
-                if (input.Equals("All Data", StringComparison.OrdinalIgnoreCase))
+                // Added friendly synonyms: "All"
+                if (input.Equals("All Data", StringComparison.OrdinalIgnoreCase) || input.Equals("All", StringComparison.OrdinalIgnoreCase))
                 { CurrentRequest.DataScope = "All Data"; CurrentRequest.Categories.Clear(); isValid = true; }
                 else
                 {
@@ -173,9 +161,13 @@ public class ReportManager
                 break;
 
             case ConversationState.AskForDataAction:
-                if (input.Equals("Save File", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.DataAction = "Save File"; isValid = true; }
-                else if (input.Equals("Print", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.DataAction = "Print"; isValid = true; }
-                else if (input.Equals("Display", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.DataAction = "Display"; isValid = true; }
+                // Added friendly synonyms: "Save", "Print", "Display"
+                if (input.Equals("Save File", StringComparison.OrdinalIgnoreCase) || input.Equals("Save", StringComparison.OrdinalIgnoreCase))
+                { CurrentRequest.DataAction = "Save File"; isValid = true; }
+                else if (input.Equals("Print", StringComparison.OrdinalIgnoreCase))
+                { CurrentRequest.DataAction = "Print"; isValid = true; }
+                else if (input.Equals("Display", StringComparison.OrdinalIgnoreCase))
+                { CurrentRequest.DataAction = "Display"; isValid = true; }
                 else { errorMessage = "Please enter 'Save File', 'Print', or 'Display'."; }
                 break;
 
@@ -188,6 +180,13 @@ public class ReportManager
             case ConversationState.AskForReportToOpen:
                 if (FileExistsInReportDir(input, out reportName, out errorMessage))
                 { CurrentRequest.ReportName = reportName; isValid = true; }
+                break;
+
+            case ConversationState.ConfirmationAndGenerate:
+                // Added friendly synonyms: "Yes", "Go"
+                if (input.Equals("Confirm", StringComparison.OrdinalIgnoreCase) || input.Equals("Yes", StringComparison.OrdinalIgnoreCase) || input.Equals("Go", StringComparison.OrdinalIgnoreCase))
+                { isValid = true; }
+                else { errorMessage = "Please type 'Confirm' to proceed with generation."; }
                 break;
         }
 
@@ -217,11 +216,11 @@ public class ReportManager
         switch (CurrentState)
         {
             case ConversationState.Greeting: return "Welcome! Ready for your first command.";
-            case ConversationState.AskForPrimaryAction: return "Do you want to **GenerateReport** or **OpenExisting**?";
+            case ConversationState.AskForPrimaryAction: return "Do you want to **GenerateReport** or **OpenExisting**? (Tip: Try 'Generate' or 'Open')";
             case ConversationState.AskForTimeFrame: return "What is the time frame? (e.g., '2023-01-01 to 2023-10-31')";
             case ConversationState.AskForDataScope:
-                return "Do you want **All Data** or specific categories? (Valid: " + string.Join(", ", ValidReportCategories) + ")";
-            case ConversationState.AskForDataAction: return "What do you want to do with the data? (**Save File**, **Print**, **Display**)";
+                return "Do you want **All Data** or specific categories? (Valid: " + string.Join(", ", ValidReportCategories) + " or 'All')";
+            case ConversationState.AskForDataAction: return "What do you want to do with the data? (**Save File**, **Print**, or **Display**)";
             case ConversationState.AskForSaveFormat: return "What format do you want to save as? (**PDF** or **DOCX**)";
             case ConversationState.AskForReportToOpen:
                 string list = string.Join("\n - ", GetAvailableReports());
@@ -295,17 +294,36 @@ public class ReportManager
     private bool TryParseTimeFrame(string input, out DateTime startDate, out DateTime endDate, out string error)
     {
         startDate = DateTime.MinValue; endDate = DateTime.MinValue; error = null;
-        string[] parts = input.Split(new[] { "to", "-", "/", " " }, StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Length < 2) { error = "Please enter two dates separated by a space or 'to'."; return false; }
+        string cleanedInput = input.Replace("to", "|").Trim();
+        string[] parts = cleanedInput.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
 
-        if (!DateTime.TryParseExact(parts.First(), AcceptedDateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out startDate))
-        { error = "Invalid start date format. Check allowed formats."; return false; }
+        if (parts.Length != 2)
+        {
+            error = "Please enter two distinct dates separated by 'to'.";
+            return false;
+        }
 
-        if (!DateTime.TryParseExact(parts.Last(), AcceptedDateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out endDate))
-        { error = "Invalid end date format. Check allowed formats."; return false; }
+        string startDateString = parts[0].Trim();
+        string endDateString = parts[1].Trim();
 
-        if (startDate > endDate) { error = "The start date cannot be after the end date."; return false; }
+        if (!DateTime.TryParseExact(startDateString, AcceptedDateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out startDate))
+        {
+            error = "Invalid start date format. Ensure it's a valid date (e.g., YYYY-MM-DD or MM/DD/YYYY).";
+            return false;
+        }
+
+        if (!DateTime.TryParseExact(endDateString, AcceptedDateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out endDate))
+        {
+            error = "Invalid end date format. Ensure it's a valid date.";
+            return false;
+        }
+
+        if (startDate > endDate)
+        {
+            error = "The start date cannot be after the end date.";
+            return false;
+        }
 
         return true;
     }
