@@ -77,11 +77,14 @@ namespace MPHBSMS
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            textBox1.Clear();
-
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
+
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
@@ -90,10 +93,9 @@ namespace MPHBSMS
                     con.Open();
 
                     // ----------------------------------------------------
-                    // 1. CHART SETUP AND DATA LOADING (Using Indexing for Color)
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
                     // ----------------------------------------------------
 
-                    // Ensure chart is clear before adding new data
                     chart1.Titles.Clear();
                     chart1.Series.Clear();
 
@@ -101,58 +103,70 @@ namespace MPHBSMS
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    // EFFICIENT QUERY: Get all counts in one database call
-                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE PM.currentWard = ? " ;
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
 
                     using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        com.Parameters.AddWithValue("?", ward);
-
                         using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            // We'll track the index of the point as we add it
-                            int pointIndex = 0;
-
                             while (reader.Read())
                             {
                                 string category = reader["category"].ToString();
                                 int count = Convert.ToInt32(reader["CategoryCount"]);
 
-                                // Add point (no local 'point' variable needed)
-                                activitySeries.Points.AddXY(category, count);
-
-                                // Get a direct reference to the LAST ADDED point via its index
-                                System.Drawing.Color barColor = System.Drawing.Color.Gray;
-
-                                if (categoryColors.ContainsKey(category))
-                                {
-                                    barColor = categoryColors[category];
-                                }
-
-                                // Set the color property directly on the point at the current index
-                                activitySeries.Points[pointIndex].Color = barColor;
-
-                                pointIndex++;
+                                dbCounts[category] = count;
                             }
                         }
                     }
 
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
                     // ----------------------------------------------------
-                    // 2. DATAGRIDVIEW LOADING (CORRECTED QUERY)
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
                     // ----------------------------------------------------
 
-                    // Query to display all joined patient and movement details for the selected ward
+                    // DataGridView query with direct string injection
                     string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
                                       "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
-                                      "WHERE PM.currentWard = ?";
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
 
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -171,69 +185,111 @@ namespace MPHBSMS
 
         private void femaleWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWardTransferIn", "InterWardTransferIn"},
-    {"Discharge", "Discharge"},
-    {"InterWardTransferOut", "InterWardTransferOut"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber WHERE PM.currentWard = ? AND TM.category = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -252,69 +308,111 @@ namespace MPHBSMS
 
         private void paediatricWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -333,69 +431,111 @@ namespace MPHBSMS
 
         private void maleWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -409,74 +549,116 @@ namespace MPHBSMS
                 MessageBox.Show("ERROR!!\n" + ex.Message,
                     "Marondera Provincial Hospital",
                     MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-            } 
+            }
         }
 
         private void postNatalWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -495,69 +677,111 @@ namespace MPHBSMS
 
         private void neoNatalWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -576,69 +800,111 @@ namespace MPHBSMS
 
         private void antiNatalWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMovement WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMovement  WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -657,69 +923,111 @@ namespace MPHBSMS
 
         private void laborWardToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMaster WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitalNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMaster WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -738,70 +1046,111 @@ namespace MPHBSMS
 
         private void accidentAndEmergencyToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {"Admission", System.Drawing.Color.MediumSeaGreen},
+    {"InterWardTransferIn", System.Drawing.Color.SteelBlue},
+    {"Discharge", System.Drawing.Color.Firebrick},
+    {"InterWardTransferOut", System.Drawing.Color.Orange},
+    {"Death", System.Drawing.Color.DarkRed}
+};
 
-
+            // Initializing visibility and clearing controls
             chart1.Visible = true;
             dataGridView1.Visible = false;
             dataGridView2.Visible = true;
             dataGridView2.DataSource = null;
-            dataGridView2.Rows.Clear();
+            // Assuming textBox1 is a valid control
+            // textBox1.Clear(); 
 
             ToolStripMenuItem ClickedItem = (ToolStripMenuItem)sender;
             var ward = ClickedItem.Text;
 
-            var metrics = new Dictionary<string, string>
-{
-    {"Admissions", "Admission"},
-    {"InterWard Transfer In", "Inter Ward Transfer In"},
-    {"Discharge", "Discharge"},
-    {"Inter Ward Transfer Out", "Inter Ward Transfer Out"},
-    {"Death", "Death"}
-};
+            // Sanitize the ward variable to prevent SQL errors
+            string safeWard = ward.Replace("'", "''");
 
             try
             {
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    chart1.Series.Clear();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND DATA LOADING (FIXED FOR LEGEND AND GRIDLINES)
+                    // ----------------------------------------------------
 
                     chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
                     chart1.Titles.Add("Ward Activity Summary for: " + ward);
                     chart1.ChartAreas[0].AxisX.Title = "Category";
                     chart1.ChartAreas[0].AxisY.Title = "Count";
 
-                    var activitySeries = chart1.Series.Add("Activity Count");
-                    activitySeries.ChartType = SeriesChartType.Column;
-                    activitySeries.IsValueShownAsLabel = true;
-                    activitySeries.XValueType = ChartValueType.String;
+                    // Ensure gridlines are enabled (default behavior)
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
 
-                    foreach (var metric in metrics)
+                    // EFFICIENT QUERY to get all category counts
+                    string chartQuery = "SELECT TM.category, COUNT(PM.hospitalNumber) AS CategoryCount " +
+                                        "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                        "WHERE PM.currentWard = '" + safeWard + "' " +
+                                        "GROUP BY TM.category";
+
+                    // Step 1: Execute Query and store results in a map
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
                     {
-                        string seriesName = metric.Key;
-                        string categoryValue = metric.Value;
-
-                        string commandText = "SELECT COUNT(*) FROM tblPatientMaster WHERE [ward] = ? AND [category] = ?";
-                        using (OleDbCommand com = new OleDbCommand(commandText, con))
+                        using (OleDbDataReader reader = com.ExecuteReader())
                         {
-                            com.Parameters.AddWithValue("?", ward);
-                            com.Parameters.AddWithValue("?", categoryValue);
-
-                            int count = 0;
-                            object result = com.ExecuteScalar();
-
-                            if (result != null && result != DBNull.Value)
+                            while (reader.Read())
                             {
-                                count = Convert.ToInt32(result);
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+
+                                dbCounts[category] = count;
                             }
-
-
-                            activitySeries.Points.AddXY(seriesName, count);
                         }
                     }
 
-                    string myquaery = "SELECT [hospitlNumber],[name],[surname],[gender],[date],[time],[category] FROM tblPatientMaster WHERE [ward] = ?"; // Selective columns recommended
+                    // *** FIX: Create a separate series for each category. This fixes the Legend and bar display. ***
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        // 1. Create a new series named after the category (This name appears in the legend!)
+                        var categorySeries = chart1.Series.Add(categoryName);
+
+                        // 2. Set chart properties for the new series
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor; // Set the color for the entire series
+
+                        // 3. Get count from the database results, or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // 4. Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+                    // END OF CHART FIX
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (NO CHANGE NEEDED HERE)
+                    // ----------------------------------------------------
+
+                    // DataGridView query with direct string injection
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                                      "WHERE PM.currentWard = '" + safeWard + "'";
+
                     OleDbCommand comm = new OleDbCommand(myquaery, con);
-                    comm.Parameters.AddWithValue("?", ward);
+
                     OleDbDataAdapter dm = new OleDbDataAdapter(comm);
                     DataTable dtt = new DataTable();
                     dm.Fill(dtt);
@@ -824,8 +1173,11 @@ namespace MPHBSMS
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
                 con.Open();
-               // string com = "SELECT tblPatientMaster.hospitalNumber,tblPatientMaster.name,tblPatientMaster.surname,tblPatientMaster.gender,tblPatientMaster.currentWard, tblPatientMaster.isAdmitted,tblPatientMaster.admissionDate,tblPatientMaster.dischargeDate,tblPatientMovement.MovementDateTime,tblPatientMovement.toWard,tblPatientMovement.fromWard,tblPatientMovement.category,tblPatientMovement.enteredBy FROM tblPatientMaster JOIN tblPatientMovement ON tblPatientMaster.hospitalNumber = tblPatientMovement.hospitalNumber ORDER BY tblPatientMaster.hospitalNumber ASC"; 
-              string com = " SELECT tblPatientMaster.hospitalNumber, tblPatientMaster.name, tblPatientMaster.surname, tblPatientMaster.gender, tblPatientMaster.currentWard, tblPatientMaster.isAdmitted, tblPatientMaster.admissionDate, tblPatientMaster.dischargeDate, tblPatientMovement.MovementDateTime, tblPatientMovement.toWard, tblPatientMovement.fromWard, tblPatientMovement.category, tblPatientMovement.enteredBy FROM tblPatientMaster INNER JOIN tblPatientMovement ON tblPatientMaster.hospitalNumber = tblPatientMovement.hospitalNumber ORDER BY tblPatientMaster.hospitalNumber ASC";
+                string com = "SELECT " +
+                             "PM.hospitalNumber, PM.name, PM.surname, PM.gender, PM.currentWard, PM.isAdmitted, PM.admissionDate, PM.dischargeDate, " +
+                             "TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                             "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                             "ORDER BY PM.hospitalNumber ASC";
                 OleDbCommand comm = new OleDbCommand(com, con);
                 OleDbDataAdapter da = new OleDbDataAdapter(comm);
                 DataTable dt = new DataTable();
@@ -842,44 +1194,13 @@ namespace MPHBSMS
         "Category",
         "Ward"
     });
-                comboBox1.SelectedIndex = 0; // Default selection
-
+                comboBox1.SelectedIndex = 0; 
                 dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
                 dataGridView1.ReadOnly = true;
                 dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 
                 con.Close();
             }
-
-            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
-            {
-                con.Open();
-                string com = "select * from tblPatientMaster";
-                OleDbCommand comm = new OleDbCommand(com, con);
-                OleDbDataAdapter da = new OleDbDataAdapter(comm);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-                dataGridView1.DataSource = dt;
-                chart1.Visible = false;
-                dataGridView2.Visible = false;
-
-                comboBox1.Items.AddRange(new string[]
-    {
-        "Hospital Number",
-        "Name",
-        "Surname",
-        "Category",
-        "Ward"
-    });
-                comboBox1.SelectedIndex = 0; // Default selection
-
-                dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-                dataGridView1.ReadOnly = true;
-                dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-
-                con.Close();
-            }
-
         }
 
         private void chart1_Click(object sender, EventArgs e)
@@ -903,34 +1224,35 @@ namespace MPHBSMS
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
         return;
     }
-
-    string query = "SELECT * FROM tblPatientMaster  WHERE ";
-
+    string query = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                   "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
+                   "WHERE ";
     switch (criteria)
     {
         case "Hospital Number":
-            query += "[hospitalNumber] = ?";
+            query += "PM.[hospitalNumber] = ?";
             break;
         case "Name":
-            query += "[name] LIKE ?";
+            query += "PM.[name] LIKE ?";
             value = "%" + value + "%";
             break;
         case "Surname":
-            query += "[surname] LIKE ?";
+            query += "PM.[surname] LIKE ?";
             value = "%" + value + "%";
             break;
         case "Category":
-            query += "[category] LIKE ?";
+            query += "TM.[category] LIKE ?";
             value = "%" + value + "%";
             break;
         case "Ward":
-            query += "[ward] LIKE ?";
+            query += "PM.[currentWard] LIKE ?";
             value = "%" + value + "%";
             break;
-        default: 
+        default:
             MessageBox.Show("Invalid search criteria selected: " + criteria, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return; 
+            return;
     }
+
 
     try
     {
@@ -975,6 +1297,13 @@ namespace MPHBSMS
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
 
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            Reports obj = new Reports();
+            this.Close();
+            obj.Show();
         }
     }
 }

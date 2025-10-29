@@ -1428,5 +1428,12 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
         }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Reports obj = new Reports();
+            this.Close();
+            obj.Show();
+        }
     }
 }
