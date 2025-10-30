@@ -155,10 +155,27 @@ namespace MPHBSMS
         }
 
         // === Navigation/Placeholder Event Handlers ===
-        private void button1_Click(object sender, EventArgs e) { /* Navigation logic */ }
-        private void button2_Click(object sender, EventArgs e) { /* Navigation logic */ }
-        private void button3_Click(object sender, EventArgs e) { /* Navigation logic */ }
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Form1 obj = new Form1();
+            this.Close();
+            obj.Show();
+        }
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Menu obj = new Menu();
+            this.Close();
+            obj.Show();
+        }
+        private void button3_Click(object sender, EventArgs e)
+        {
+            Visual obj = new Visual();
+            this.Close();
+            obj.Show();
+        }
         private void laborWardToolStripMenuItem_Click(object sender, EventArgs e) { /* Menu logic */ }
         private void richTextBox1_TextChanged(object sender, EventArgs e) { /* Empty */ }
+
+       
     }
 }
