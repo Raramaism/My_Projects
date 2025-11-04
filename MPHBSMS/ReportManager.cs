@@ -1,455 +1,418 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.OleDb;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Globalization;
 
-// Dummy NLP processor for demonstration. Replace with advanced NLP if needed.
-public class NLPProcessor
+namespace MPHBSMS
 {
-    public string ExtractIntent(string message)
+    // ==========================================================
+    // 1. HELPER DEFINITIONS
+    // ==========================================================
+
+    public enum ConversationState
     {
-        message = message.ToLower();
-        if (message.Contains("admit") || message.Contains("patient") || message.Contains("who is"))
-            return "PatientInfo";
-        if (message.Contains("move") || message.Contains("transfer") || message.Contains("ward"))
-            return "MovementInfo";
-        if (message.Contains("report") || message.Contains("summary") || message.Contains("generate"))
-            return "ReportManager";
-        if (message.Contains("open") && message.Contains("report"))
-            return "OpenReport";
-        if (message.Contains("count") || message.Contains("how many"))
-            return "CountInfo";
-        return "Unknown";
+        Greeting,
+        AskForPrimaryAction,
+        AskForStartDate, // Separated state
+        AskForEndDate,   // Separated state
+        AskForDataScope,
+        AskForDataAction,
+        AskForSaveFormat,
+        AskForReportToOpen,
+        ConfirmationAndGenerate,
+        Complete
     }
 
-    public Dictionary<string, string> ExtractEntities(string message)
+    public class ReportRequest
     {
-        var entities = new Dictionary<string, string>();
-        foreach (var word in message.Split(' '))
+        private List<string> _categories;
+
+        public string PrimaryAction { get; set; }
+        public System.DateTime StartDate { get; set; }
+        public System.DateTime EndDate { get; set; }
+        public string DataScope { get; set; }
+        public string DataAction { get; set; }
+        public string FileFormat { get; set; }
+        public string ReportName { get; set; }
+
+        public List<string> Categories
         {
-            if (word.All(char.IsDigit) && word.Length > 4)
-                entities["hospitalNumber"] = word;
-        }
-        return entities;
-    }
-}
-
-public enum MessageSide { Left, Right }
-
-public enum ConversationState
-{
-    Greeting,
-    AskForPrimaryAction,
-    AskForTimeFrame,
-    AskForDataScope,
-    AskForDataAction,
-    AskForSaveFormat,
-    AskForReportToOpen,
-    ConfirmationAndGenerate,
-    Complete
-}
-
-public class ReportRequest
-{
-    public string PrimaryAction { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public string DataScope { get; set; }
-    public string DataAction { get; set; }
-    public string FileFormat { get; set; }
-    public string ReportName { get; set; }
-    public List<string> Categories { get; set; }
-
-    public ReportRequest()
-    {
-        Categories = new List<string>();
-    }
-}
-
-public class MphFullFeatureChatBot
-{
-    private OleDbConnection _con;
-    private string _currentUser;
-    private NLPProcessor _nlp;
-    private List<Tuple<MessageSide, string>> _conversationHistory;
-    private ConversationState _state;
-    private ReportRequest _reportRequest;
-    private readonly string[] ValidReportCategories = { "Admission", "Deaths", "Transfers", "Discharges", "Consultations" };
-    private readonly string ReportDirectoryPath;
-    private static readonly string[] AcceptedDateFormats = new string[]
-    {
-        "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy", "M/d/yyyy", "dd-MMM-yyyy"
-    };
-
-    public MphFullFeatureChatBot()
-    {
-        _nlp = new NLPProcessor();
-        _conversationHistory = new List<Tuple<MessageSide, string>>();
-        _state = ConversationState.Greeting;
-        _reportRequest = new ReportRequest();
-
-        // Always get the current user for every request
-        _currentUser = MPHBSMS.CurrentUser;
-        _con = new OleDbConnection(DatabaseHelper.ConnectionString);
-        _con.Open();
-        DatabaseHelper.InitializeDatabase();
-
-        string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        ReportDirectoryPath = Path.Combine(documentsPath, "MyReportGeneratorFiles");
-        if (!Directory.Exists(ReportDirectoryPath)) Directory.CreateDirectory(ReportDirectoryPath);
-    }
-
-    public string HandleMessage(string userMessage)
-    {
-        _currentUser = MPHBSMS.CurrentUser;
-        _conversationHistory.Add(new Tuple<MessageSide, string>(MessageSide.Right, "User (" + _currentUser + "): " + userMessage));
-
-        string intent = _nlp.ExtractIntent(userMessage);
-        Dictionary<string, string> entities = _nlp.ExtractEntities(userMessage);
-
-        string response;
-
-        switch (intent)
-        {
-            case "PatientInfo":
-                response = RespondWithPatientInfo(entities);
-                break;
-            case "MovementInfo":
-                response = RespondWithMovementInfo(entities);
-                break;
-            case "ReportManager":
-                response = HandleReportManager(userMessage);
-                break;
-            case "OpenReport":
-                response = HandleOpenReport(userMessage);
-                break;
-            case "CountInfo":
-                response = RespondWithCounts(entities);
-                break;
-            default:
-                response = "I'm here to assist with patients, movements, reports, and counts. How can I help?";
-                break;
+            get { return _categories; }
+            set { _categories = value; }
         }
 
-        _conversationHistory.Add(new Tuple<MessageSide, string>(MessageSide.Left, "Bot: " + response));
-        return response;
+        public ReportRequest()
+        {
+            _categories = new List<string>();
+        }
     }
 
-    // Retrieve from BOTH PatientMaster and PatientMovement
-    private string RespondWithPatientInfo(Dictionary<string, string> entities)
+    public class ProcessResult
     {
-        string hospitalNumber = entities.ContainsKey("hospitalNumber") ? entities["hospitalNumber"] : null;
-        string masterQuery = "SELECT * FROM tblPatientMaster";
-        if (hospitalNumber != null)
-            masterQuery += " WHERE hospitalNumber = '" + hospitalNumber + "'";
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
+    }
 
-        string info = "";
 
-        using (OleDbCommand cmd = new OleDbCommand(masterQuery, _con))
-        using (OleDbDataReader reader = cmd.ExecuteReader())
+    // ==========================================================
+    // 2. REPORT MANAGER CLASS
+    // ==========================================================
+
+    public class ReportManager
+    {
+        // --- Fields and Properties ---
+        private ConversationState _currentState;
+        public ConversationState CurrentState
         {
-            if (reader.Read())
+            get { return _currentState; }
+            set { _currentState = value; }
+        }
+
+        public ReportRequest CurrentRequest { get; private set; }
+
+        private const string AppFolderName = "MyReportGeneratorFiles";
+        private readonly string ReportDirectoryPath;
+
+        // 🌟 FINAL FIX: Comprehensive list of date formats to accept all user inputs.
+        private static readonly string[] AcceptedDateFormats = new string[]
+        {
+            "yyyy-MM-dd", "yyyy/MM/dd", 
+            "MM-dd-yyyy", "MM/dd/yyyy", 
+            "M-d-yyyy", "M/d/yyyy",     
+            "dd-MM-yyyy", "dd/MM/yyyy", 
+            "d-M-yyyy", "d/M/yyyy",     
+            "dd-MMM-yyyy"
+        };
+
+        private readonly List<string> ValidReportCategories = new List<string>
+        {
+            "Admission", "Deaths", "Transfers", "Discharges", "Consultations"
+        };
+
+        // --- Constructor ---
+        public ReportManager()
+        {
+            CurrentRequest = new ReportRequest();
+            _currentState = ConversationState.AskForPrimaryAction;
+            ReportDirectoryPath = InitializeReportDirectory();
+        }
+
+        private string InitializeReportDirectory()
+        {
+            try
             {
-                info = "Patient Info:\n";
-                info += "Name: " + reader["name"].ToString() + "\n";
-                info += "Ward: " + reader["currentWard"].ToString() + "\n";
-                info += "Admitted: " + reader["isAdmitted"].ToString() + "\n";
-                info += "Admission Date: " + reader["admissionDate"].ToString() + "\n";
-                info += "Discharge Date: " + reader["dischargeDate"].ToString() + "\n";
-                info += "Gender: " + reader["gender"].ToString() + "\n";
-            }
-            else
-            {
-                return "No patient found for that number.";
-            }
-        }
+                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string finalPath = Path.Combine(documentsPath, AppFolderName);
 
-        // Get movement info for the patient
-        string movementQuery = "SELECT * FROM tblPatientMovement";
-        if (hospitalNumber != null)
-            movementQuery += " WHERE hospitalNumber = '" + hospitalNumber + "'";
-        List<string> movements = new List<string>();
-        using (OleDbCommand cmd = new OleDbCommand(movementQuery, _con))
-        using (OleDbDataReader reader = cmd.ExecuteReader())
-        {
-            while (reader.Read())
-            {
-                string movement = "Movement: "
-                    + reader["MovementDateTime"].ToString()
-                    + " | " + reader["fromWard"].ToString()
-                    + " → " + reader["toWard"].ToString()
-                    + " (" + reader["category"].ToString() + ")";
-                movements.Add(movement);
-            }
-        }
-
-        if (movements.Count > 0)
-        {
-            info += "\nMovement History:\n" + string.Join("\n", movements);
-        }
-        else
-        {
-            info += "\nNo movement records found for this patient.";
-        }
-
-        return info;
-    }
-
-    private string RespondWithMovementInfo(Dictionary<string, string> entities)
-    {
-        string query = "SELECT * FROM tblPatientMovement WHERE enteredBy = '" + _currentUser + "'";
-        if (entities.ContainsKey("hospitalNumber"))
-            query += " AND hospitalNumber = '" + entities["hospitalNumber"] + "'";
-        using (OleDbCommand cmd = new OleDbCommand(query, _con))
-        using (OleDbDataReader reader = cmd.ExecuteReader())
-        {
-            List<string> movements = new List<string>();
-            while (reader.Read())
-            {
-                movements.Add(reader["MovementDateTime"].ToString() + ": " +
-                              reader["fromWard"].ToString() + " → " +
-                              reader["toWard"].ToString() + " (" +
-                              reader["category"].ToString() + ")");
-            }
-            return movements.Count > 0 ? string.Join("\n", movements) : "No movement records found.";
-        }
-    }
-
-    // Count patients and movements, optionally by hospitalNumber
-    private string RespondWithCounts(Dictionary<string, string> entities)
-    {
-        string hospitalNumber = entities.ContainsKey("hospitalNumber") ? entities["hospitalNumber"] : null;
-        string info = "";
-
-        // Count patients
-        string patientCountQuery = "SELECT COUNT(*) FROM tblPatientMaster";
-        if (hospitalNumber != null)
-            patientCountQuery += " WHERE hospitalNumber = '" + hospitalNumber + "'";
-        int patientCount = 0;
-        using (OleDbCommand cmd = new OleDbCommand(patientCountQuery, _con))
-        {
-            object result = cmd.ExecuteScalar();
-            patientCount = (result != null) ? Convert.ToInt32(result) : 0;
-        }
-        info = "Number of matching patients: " + patientCount.ToString();
-
-        // Count movements
-        string movementCountQuery = "SELECT COUNT(*) FROM tblPatientMovement";
-        if (hospitalNumber != null)
-            movementCountQuery += " WHERE hospitalNumber = '" + hospitalNumber + "'";
-        int movementCount = 0;
-        using (OleDbCommand cmd = new OleDbCommand(movementCountQuery, _con))
-        {
-            object result = cmd.ExecuteScalar();
-            movementCount = (result != null) ? Convert.ToInt32(result) : 0;
-        }
-        info += "\nNumber of matching movements: " + movementCount.ToString();
-
-        return info;
-    }
-
-    private string HandleReportManager(string userMessage)
-    {
-        switch (_state)
-        {
-            case ConversationState.Greeting:
-                _state = ConversationState.AskForPrimaryAction;
-                return "Do you want to generate a new report or open an existing one?";
-            case ConversationState.AskForPrimaryAction:
-                if (userMessage.ToLower().Contains("generate"))
+                if (!Directory.Exists(finalPath))
                 {
-                    _reportRequest.PrimaryAction = "GenerateReport";
-                    _state = ConversationState.AskForTimeFrame;
-                    return "What is the time frame? (e.g., '2023-01-01 to 2023-10-31')";
+                    Directory.CreateDirectory(finalPath);
                 }
-                else if (userMessage.ToLower().Contains("open"))
+                return finalPath;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        // --- Core State Machine ---
+
+        public ProcessResult ProcessAndAdvance(string input)
+        {
+            string errorMessage = null;
+            // CRITICAL SANITIZATION: Clean up any hidden control characters and trim
+            string cleanedInput = new string(input.Where(c => !char.IsControl(c)).ToArray()).Trim();
+
+            bool isValid = ProcessInput(cleanedInput, out errorMessage);
+
+            if (isValid)
+            {
+                if (CurrentState == ConversationState.ConfirmationAndGenerate)
                 {
-                    _reportRequest.PrimaryAction = "OpenExisting";
-                    _state = ConversationState.AskForReportToOpen;
-                    return "What is the name of the report you want to open?";
+                    CurrentState = ConversationState.Complete;
                 }
                 else
                 {
-                    return "Please specify if you want to generate a report or open one.";
+                    MoveToNextState();
                 }
-            case ConversationState.AskForTimeFrame:
-                DateTime start, end;
-                string error;
-                if (TryParseTimeFrame(userMessage, out start, out end, out error))
-                {
-                    _reportRequest.StartDate = start;
-                    _reportRequest.EndDate = end;
-                    _state = ConversationState.AskForDataScope;
-                    return "Which categories? (Admission, Deaths, Transfers, Discharges, Consultations, or 'All')";
-                }
-                else
-                {
-                    return "Please enter a valid time frame (e.g., '2023-01-01 to 2023-10-31')";
-                }
-            case ConversationState.AskForDataScope:
-                if (userMessage.ToLower().Contains("all"))
-                {
-                    _reportRequest.DataScope = "All Data";
-                    _state = ConversationState.AskForDataAction;
-                    return "Do you want to save, print, or display the report?";
-                }
-                else
-                {
-                    string[] cats = userMessage.Split(',');
-                    foreach (string cat in cats)
+            }
+
+            return new ProcessResult { Success = isValid, ErrorMessage = errorMessage };
+        }
+
+        private bool ProcessInput(string cleanedInput, out string errorMessage)
+        {
+            errorMessage = null;
+            bool isValid = false;
+
+            DateTime parsedDate;
+            List<string> selectedCategories;
+            string reportName;
+
+
+            switch (CurrentState)
+            {
+                case ConversationState.Greeting:
+                case ConversationState.AskForPrimaryAction:
+                    string lowerInput = cleanedInput.ToLower();
+
+                    if (lowerInput.Equals("generatereport") || lowerInput.Equals("generate") || lowerInput.Contains("generate"))
+                    { CurrentRequest.PrimaryAction = "GenerateReport"; isValid = true; }
+                    else if (lowerInput.Equals("openexisting") || lowerInput.Equals("open") || lowerInput.Contains("open"))
+                    { CurrentRequest.PrimaryAction = "OpenExisting"; isValid = true; }
+                    else { errorMessage = "Please enter 'GenerateReport' or 'OpenExisting'."; }
+                    break;
+
+                case ConversationState.AskForStartDate:
+                    if (TryParseSingleDate(cleanedInput, out parsedDate, out errorMessage))
+                    { CurrentRequest.StartDate = parsedDate; isValid = true; }
+                    break;
+
+                case ConversationState.AskForEndDate:
+                    if (TryParseSingleDate(cleanedInput, out parsedDate, out errorMessage))
                     {
-                        string trimmedCat = cat.Trim();
-                        if (ValidReportCategories.Any(c => c.Equals(trimmedCat, StringComparison.OrdinalIgnoreCase)))
-                            _reportRequest.Categories.Add(trimmedCat);
+                        if (parsedDate < CurrentRequest.StartDate)
+                        {
+                            errorMessage = "The end date cannot be before the start date (" + CurrentRequest.StartDate.ToShortDateString() + ").";
+                        }
+                        else
+                        {
+                            CurrentRequest.EndDate = parsedDate;
+                            isValid = true;
+                        }
                     }
-                    if (_reportRequest.Categories.Count > 0)
+                    break;
+
+                case ConversationState.AskForDataScope:
+                    if (cleanedInput.Equals("All Data", StringComparison.OrdinalIgnoreCase) || cleanedInput.Equals("All", StringComparison.OrdinalIgnoreCase))
+                    { CurrentRequest.DataScope = "All Data"; CurrentRequest.Categories.Clear(); isValid = true; }
+                    else
                     {
-                        _reportRequest.DataScope = "By Category";
-                        _state = ConversationState.AskForDataAction;
-                        return "Do you want to save, print, or display the report?";
+                        if (TryParseCategories(cleanedInput, out selectedCategories, out errorMessage))
+                        { CurrentRequest.DataScope = "By Category"; CurrentRequest.Categories = selectedCategories; isValid = true; }
+                    }
+                    break;
+
+                case ConversationState.AskForDataAction:
+                    if (cleanedInput.Equals("Save File", StringComparison.OrdinalIgnoreCase) || cleanedInput.Equals("Save", StringComparison.OrdinalIgnoreCase))
+                    { CurrentRequest.DataAction = "Save File"; isValid = true; }
+                    else if (cleanedInput.Equals("Print", StringComparison.OrdinalIgnoreCase))
+                    { CurrentRequest.DataAction = "Print"; isValid = true; }
+                    else if (cleanedInput.Equals("Display", StringComparison.OrdinalIgnoreCase))
+                    { CurrentRequest.DataAction = "Display"; isValid = true; }
+                    else { errorMessage = "Please enter 'Save File', 'Print', or 'Display'."; }
+                    break;
+
+                case ConversationState.AskForSaveFormat:
+                    if (cleanedInput.Equals("PDF", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.FileFormat = "PDF"; isValid = true; }
+                    else if (cleanedInput.Equals("DOCX", StringComparison.OrdinalIgnoreCase)) { CurrentRequest.FileFormat = "DOCX"; isValid = true; }
+                    else { errorMessage = "Please enter 'PDF' or 'DOCX'."; }
+                    break;
+
+                case ConversationState.AskForReportToOpen:
+                    if (FileExistsInReportDir(cleanedInput, out reportName, out errorMessage))
+                    { CurrentRequest.ReportName = reportName; isValid = true; }
+                    break;
+
+                case ConversationState.ConfirmationAndGenerate:
+                    if (cleanedInput.Equals("Confirm", StringComparison.OrdinalIgnoreCase) || cleanedInput.Equals("Yes", StringComparison.OrdinalIgnoreCase) || cleanedInput.Equals("Go", StringComparison.OrdinalIgnoreCase))
+                    { isValid = true; }
+                    else { errorMessage = "Please type 'Confirm' to proceed with generation."; }
+                    break;
+            }
+
+            return isValid;
+        }
+
+        private void MoveToNextState()
+        {
+            switch (CurrentState)
+            {
+                case ConversationState.Greeting:
+                case ConversationState.AskForPrimaryAction:
+                    CurrentState = (CurrentRequest.PrimaryAction == "GenerateReport") ? ConversationState.AskForStartDate : ConversationState.AskForReportToOpen;
+                    break;
+                case ConversationState.AskForStartDate: CurrentState = ConversationState.AskForEndDate; break;
+                case ConversationState.AskForEndDate: CurrentState = ConversationState.AskForDataScope; break;
+                case ConversationState.AskForDataScope: CurrentState = ConversationState.AskForDataAction; break;
+                case ConversationState.AskForDataAction:
+                    CurrentState = (CurrentRequest.DataAction == "Save File") ? ConversationState.AskForSaveFormat : ConversationState.ConfirmationAndGenerate;
+                    break;
+                case ConversationState.AskForSaveFormat: CurrentState = ConversationState.ConfirmationAndGenerate; break;
+                case ConversationState.AskForReportToOpen: CurrentState = ConversationState.ConfirmationAndGenerate; break;
+            }
+        }
+
+        public string GetCurrentPrompt()
+        {
+            switch (CurrentState)
+            {
+                case ConversationState.Greeting:
+                    return "Welcome to the Report Generator! I'm here to guide you through creating or opening a report.";
+                case ConversationState.AskForPrimaryAction:
+                    return "Do you want to **GenerateReport** or **OpenExisting**? (Tip: Try 'Generate' or 'Open')";
+                case ConversationState.AskForStartDate: return "What is the **Start Date** for the report? (e.g., '2023-01-01' or '01/01/2023')";
+                case ConversationState.AskForEndDate: return "What is the **End Date** for the report? (e.g., '2023-10-31' or '10/31/2023')";
+
+                case ConversationState.AskForDataScope:
+                    return "Do you want **All Data** or specific categories? (Valid: " + string.Join(", ", ValidReportCategories) + " or 'All')";
+                case ConversationState.AskForDataAction: return "What do you want to do with the data? (**Save File**, **Print**, or **Display**)";
+                case ConversationState.AskForSaveFormat: return "What format do you want to save as? (**PDF** or **DOCX**)";
+                case ConversationState.AskForReportToOpen:
+                    string list = string.Join("\n - ", GetAvailableReports());
+                    return "What is the name of the existing report you want to open?\n\nAvailable Reports:\n - " + list;
+                case ConversationState.ConfirmationAndGenerate: return "Ready to proceed with " + CurrentRequest.PrimaryAction + ". Please confirm. (Type 'Confirm')";
+                case ConversationState.Complete: return "Operation complete. Type **Generate** or **Open** to start a new report.";
+                default: return "Error: Unknown state.";
+            }
+        }
+
+        // --- Execution and Helpers ---
+
+        public string ExecuteReportLogic()
+        {
+            if (CurrentRequest.PrimaryAction == "OpenExisting")
+            {
+                return "Action Complete: Attempting to open existing report file: **" + CurrentRequest.ReportName + "**";
+            }
+
+            // Logic for GENERATE REPORT
+            StringBuilder actionMessage = new StringBuilder();
+            actionMessage.AppendLine("Report Generation for scope: **" + CurrentRequest.DataScope + "** (Dates: " + CurrentRequest.StartDate.ToShortDateString() + " to " + CurrentRequest.EndDate.ToShortDateString() + ")");
+
+            if (CurrentRequest.DataScope == "By Category" && CurrentRequest.Categories.Any())
+            {
+                actionMessage.AppendLine("Categories: " + string.Join(", ", CurrentRequest.Categories));
+            }
+
+            switch (CurrentRequest.DataAction)
+            {
+                case "Save File":
+                    string fileName = "Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "." + CurrentRequest.FileFormat.ToLower();
+                    string fullFilePath = Path.Combine(ReportDirectoryPath, fileName);
+
+                    if (SaveReportContent(CurrentRequest, fullFilePath))
+                    {
+                        actionMessage.AppendLine("Success: Report saved as **" + CurrentRequest.FileFormat + "** to:");
+                        actionMessage.AppendLine(ReportDirectoryPath + "\\" + fileName);
                     }
                     else
                     {
-                        return "Invalid categories. Valid: " + string.Join(", ", ValidReportCategories) + " or 'All'";
+                        actionMessage.AppendLine("Failure: Could not save the report file (Check folder access: " + ReportDirectoryPath + ").");
                     }
-                }
-            case ConversationState.AskForDataAction:
-                if (userMessage.ToLower().Contains("save"))
+                    break;
+
+                case "Print":
+                    actionMessage.AppendLine("Action: Sending report content to the printer queue.");
+                    break;
+
+                case "Display":
+                    actionMessage.AppendLine("Action: Preparing report content for on-screen display.");
+                    break;
+            }
+
+            return actionMessage.ToString();
+        }
+
+        private bool SaveReportContent(ReportRequest request, string fullPath)
+        {
+            if (ReportDirectoryPath == null) return false;
+
+            try
+            {
+                string content = "Report Generated: " + DateTime.Now.ToString() + "\n" +
+                                 "Time Frame: " + request.StartDate.ToShortDateString() + " to " + request.EndDate.ToShortDateString() + "\n" +
+                                 "Scope: " + request.DataScope + " (Categories: " + string.Join(", ", request.Categories) + ")\n" +
+                                 "Action: Save as " + request.FileFormat;
+
+                File.WriteAllText(fullPath, content);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private bool TryParseSingleDate(string input, out DateTime date, out string error)
+        {
+            date = DateTime.MinValue; error = null;
+
+            if (!DateTime.TryParseExact(
+                input,
+                AcceptedDateFormats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out date))
+            {
+                error = "Invalid date format. Please use a valid format (e.g., YYYY-MM-DD or MM/DD/YYYY).";
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryParseCategories(string input, out List<string> selectedCategories, out string error)
+        {
+            selectedCategories = new List<string>(); error = null;
+            var rawCategories = input.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(c => c.Trim())
+                                     .ToList();
+
+            foreach (var category in rawCategories)
+            {
+                if (ValidReportCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
                 {
-                    _reportRequest.DataAction = "Save File";
-                    _state = ConversationState.AskForSaveFormat;
-                    return "What format? (PDF or DOCX)";
-                }
-                else if (userMessage.ToLower().Contains("print"))
-                {
-                    _reportRequest.DataAction = "Print";
-                    _state = ConversationState.ConfirmationAndGenerate;
-                    return "Ready to print. Type 'Confirm' to proceed.";
-                }
-                else if (userMessage.ToLower().Contains("display"))
-                {
-                    _reportRequest.DataAction = "Display";
-                    _state = ConversationState.ConfirmationAndGenerate;
-                    return "Ready to display. Type 'Confirm' to proceed.";
+                    selectedCategories.Add(ValidReportCategories.First(c => c.Equals(category, StringComparison.OrdinalIgnoreCase)));
                 }
                 else
                 {
-                    return "Please specify: save, print, or display.";
+                    error = "Category '" + category + "' is invalid. Valid: " + string.Join(", ", ValidReportCategories) + ".";
+                    return false;
                 }
-            case ConversationState.AskForSaveFormat:
-                if (userMessage.ToLower().Contains("pdf"))
-                {
-                    _reportRequest.FileFormat = "PDF";
-                    _state = ConversationState.ConfirmationAndGenerate;
-                    return "Ready to save as PDF. Type 'Confirm' to proceed.";
-                }
-                else if (userMessage.ToLower().Contains("docx"))
-                {
-                    _reportRequest.FileFormat = "DOCX";
-                    _state = ConversationState.ConfirmationAndGenerate;
-                    return "Ready to save as DOCX. Type 'Confirm' to proceed.";
-                }
-                else
-                {
-                    return "Please choose PDF or DOCX.";
-                }
-            case ConversationState.ConfirmationAndGenerate:
-                if (userMessage.ToLower().Contains("confirm") || userMessage.ToLower().Contains("yes"))
-                {
-                    _state = ConversationState.Complete;
-                    return ExecuteReportLogic();
-                }
-                else
-                {
-                    return "Please type 'Confirm' to proceed.";
-                }
-            case ConversationState.Complete:
-                _state = ConversationState.Greeting;
-                _reportRequest = new ReportRequest();
-                return "Report complete. How else may I help?";
-            default:
-                return "I'm ready to help with reports.";
+            }
+            return selectedCategories.Any();
         }
-    }
 
-    private string HandleOpenReport(string userMessage)
-    {
-        string fileName = userMessage.Trim();
-        string fullPath = Path.Combine(ReportDirectoryPath, fileName);
-        if (File.Exists(fullPath))
-            return "Opened report: " + fileName;
-        if (File.Exists(fullPath + ".pdf"))
-            return "Opened report: " + fileName + ".pdf";
-        if (File.Exists(fullPath + ".docx"))
-            return "Opened report: " + fileName + ".docx";
-        return "Report not found.";
-    }
-
-    private string ExecuteReportLogic()
-    {
-        if (_reportRequest.PrimaryAction == "OpenExisting")
+        private bool FileExistsInReportDir(string input, out string reportName, out string error)
         {
-            return "Action Complete: Attempting to open existing report file: " + _reportRequest.ReportName;
-        }
-        string fileName = "Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "." + ((_reportRequest.FileFormat != null) ? _reportRequest.FileFormat.ToLower() : "txt");
-        string fullFilePath = Path.Combine(ReportDirectoryPath, fileName);
+            reportName = null; error = null;
+            if (ReportDirectoryPath == null) { error = "Report directory is not accessible."; return false; }
 
-        string content = "Report Generated: " + DateTime.Now.ToString() + "\n" +
-                         "User: " + _currentUser + "\n" +
-                         "Time Frame: " + _reportRequest.StartDate.ToString("yyyy-MM-dd") + " to " + _reportRequest.EndDate.ToString("yyyy-MM-dd") + "\n" +
-                         "Scope: " + _reportRequest.DataScope + " (Categories: " + string.Join(", ", _reportRequest.Categories) + ")\n" +
-                         "Action: Save as " + _reportRequest.FileFormat;
+            string fullPathToCheck = Path.Combine(ReportDirectoryPath, input);
+            if (File.Exists(fullPathToCheck)) { reportName = input; return true; }
 
-        File.WriteAllText(fullFilePath, content);
-        return "Success: Report saved as " + _reportRequest.FileFormat + " to " + fullFilePath;
-    }
+            if (File.Exists(fullPathToCheck + ".pdf")) { reportName = input + ".pdf"; return true; }
+            if (File.Exists(fullPathToCheck + ".docx")) { reportName = input + ".docx"; return true; }
 
-    private bool TryParseTimeFrame(string input, out DateTime startDate, out DateTime endDate, out string error)
-    {
-        startDate = DateTime.MinValue; endDate = DateTime.MinValue; error = null;
-
-        string cleanedInput = input.Replace("to", "|").Trim();
-        string[] parts = cleanedInput.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length != 2)
-        {
-            error = "Please enter two distinct dates separated by 'to'.";
+            error = "Could not find a report file named '" + input + "'.";
             return false;
         }
 
-        string startDateString = parts[0].Trim();
-        string endDateString = parts[1].Trim();
-
-        if (!DateTime.TryParseExact(startDateString, AcceptedDateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out startDate))
+        private List<string> GetAvailableReports()
         {
-            error = "Invalid start date format. Ensure it's a valid date (e.g., YYYY-MM-DD or MM/DD/YYYY).";
-            return false;
+            if (ReportDirectoryPath == null || !Directory.Exists(ReportDirectoryPath))
+            {
+                return new List<string> { "Error: Directory not found." };
+            }
+
+            try
+            {
+                var files = Directory.GetFiles(ReportDirectoryPath)
+                    .Select(Path.GetFileName)
+                    .Where(name => name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ||
+                                   name.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                return files.Any() ? files : new List<string> { "No reports found." };
+            }
+            catch (Exception ex)
+            {
+                return new List<string> { "Error listing files: " + ex.Message };
+            }
         }
-
-        if (!DateTime.TryParseExact(endDateString, AcceptedDateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out endDate))
-        {
-            error = "Invalid end date format. Ensure it's a valid date.";
-            return false;
-        }
-
-        if (startDate > endDate)
-        {
-            error = "The start date cannot be after the end date.";
-            return false;
-        }
-
-        return true;
-    }
-
-    public List<Tuple<MessageSide, string>> GetConversationHistory()
-    {
-        return _conversationHistory;
-    }
-
-    ~MphFullFeatureChatBot()
-    {
-        if (_con != null && _con.State == System.Data.ConnectionState.Open)
-            _con.Close();
     }
 }

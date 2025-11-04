@@ -666,6 +666,7 @@
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Menu";
             this.Text = "Marondera Provincial Hospital Bed Statistics Management System ";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.Menu_Load);
             this.Click += new System.EventHandler(this.Menu_Click);
             this.menuStrip1.ResumeLayout(false);

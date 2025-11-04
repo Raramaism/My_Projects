@@ -1303,5 +1303,163 @@ namespace MPHBSMS
             this.Close();
             obj.Show();
         }
+
+        private void overalStatisticsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // ----------------------------------------------------
+            // 0. CATEGORY CONSTANTS AND COLORS
+            // ----------------------------------------------------
+            const string CatAdmission = "Admission";
+            const string CatTransferIn = "InterWardTransferIn";
+            const string CatDischarge = "Discharge";
+            const string CatTransferOut = "InterWardTransferOut";
+            const string CatDeath = "Death";
+            const string CatActivePatients = "CurrentInPatients"; // NEW CONSTANT FOR ACTIVE PATIENTS
+
+            // Define a map for colors aligned with categories (for the chart)
+            var categoryColors = new Dictionary<string, System.Drawing.Color>
+{
+    {CatActivePatients, System.Drawing.Color.DarkViolet}, // NEW COLOR MAPPING FOR CURRENT PATIENTS
+    {CatAdmission, System.Drawing.Color.MediumSeaGreen},
+    {CatTransferIn, System.Drawing.Color.SteelBlue},
+    {CatDischarge, System.Drawing.Color.Firebrick},
+    {CatTransferOut, System.Drawing.Color.Orange},
+    {CatDeath, System.Drawing.Color.DarkRed}
+};
+
+            // --- Execution Start ---
+
+            // Initializing visibility and clearing controls
+            chart1.Visible = true;
+            dataGridView1.Visible = false;
+            dataGridView2.Visible = true;
+            dataGridView2.DataSource = null;
+
+            // The previous code relating to ward selection (ToolStripMenuItem) has been removed.
+
+            try
+            {
+                // Note: Assuming DatabaseHelper.ConnectionString is accessible and valid
+                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+                {
+                    con.Open();
+
+                    // ----------------------------------------------------
+                    // 1. CHART SETUP AND UNIQUE PATIENT DATA LOADING (MOVEMENT CATEGORIES)
+                    // ----------------------------------------------------
+
+                    chart1.Titles.Clear();
+                    chart1.Series.Clear();
+
+                    chart1.Titles.Add("Ward Activity Summary (Unique Patients) for: ALL WARDS");
+                    chart1.ChartAreas[0].AxisX.Title = "Category";
+                    chart1.ChartAreas[0].AxisY.Title = "Count of Unique Patients";
+                    chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = true;
+
+                    // *** OLEDB/ACCESS FIX: Use a Subquery to emulate COUNT(DISTINCT) ***
+                    // Step 1: Subquery to select all DISTINCT patient/category pairs from the movement table.
+                    string subQuery = "SELECT DISTINCT TM.category, TM.hospitalNumber " +
+                                      "FROM tblPatientMovement AS TM";
+
+                    // Step 2: Main query to count the results of the subquery, grouped by category.
+                    string chartQuery = "SELECT Sub.category, COUNT(Sub.hospitalNumber) AS CategoryCount " +
+                                        "FROM (" + subQuery + ") AS Sub " +
+                                        "GROUP BY Sub.category";
+
+                    // Step 3: Execute Query and store results in a map (dbCounts)
+                    var dbCounts = new Dictionary<string, int>();
+
+                    using (OleDbCommand com = new OleDbCommand(chartQuery, con))
+                    {
+                        using (OleDbDataReader reader = com.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string category = reader["category"].ToString();
+                                int count = Convert.ToInt32(reader["CategoryCount"]);
+                                dbCounts[category] = count;
+                            }
+                        }
+                    }
+
+                    // ----------------------------------------------------
+                    // 1.5. CALCULATE TOTAL ACTIVE PATIENTS (NEW LOGIC)
+                    // ----------------------------------------------------
+                    // Query to find the count of unique patients whose latest movement is NOT Discharge or Death.
+                    // This query finds the latest movement date for each patient and then checks the category of that latest movement.
+                    string activePatientQuery =
+                        "SELECT COUNT(T.hospitalNumber) AS ActiveCount " +
+                        "FROM ( " +
+                            "SELECT TM.hospitalNumber " +
+                            "FROM tblPatientMovement AS TM " +
+                            "INNER JOIN " +
+                        // Sub-query to find the latest movement date for every patient
+                                "(SELECT hospitalNumber, MAX(MovementDateTime) AS LatestDate " +
+                                 "FROM tblPatientMovement " +
+                                 "GROUP BY hospitalNumber) AS LastMove " +
+                        // Join the movement table to the latest dates to get the category of the last movement
+                            "ON TM.hospitalNumber = LastMove.hospitalNumber AND TM.MovementDateTime = LastMove.LatestDate " +
+                        // Filter out Discharge and Death categories
+                            "WHERE TM.category <> '" + CatDischarge + "' AND TM.category <> '" + CatDeath + "' " +
+                            "GROUP BY TM.hospitalNumber" +
+                        ") AS T";
+
+                    using (OleDbCommand activeCmd = new OleDbCommand(activePatientQuery, con))
+                    {
+                        object result = activeCmd.ExecuteScalar();
+                        // Store the current active count under the new category name
+                        int activeCount = (result != DBNull.Value) ? Convert.ToInt32(result) : 0;
+                        dbCounts[CatActivePatients] = activeCount;
+                    }
+
+
+                    // Step 4: Iterate through all predefined categories (including the new one) to plot the counts.
+                    foreach (var kvp in categoryColors)
+                    {
+                        string categoryName = kvp.Key;
+                        System.Drawing.Color barColor = kvp.Value;
+
+                        var categorySeries = chart1.Series.Add(categoryName);
+                        categorySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+                        categorySeries.IsValueShownAsLabel = true;
+                        categorySeries.XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.String;
+                        categorySeries.Color = barColor;
+
+                        // Get count from the database results (dbCounts), or default to 0
+                        int count = 0;
+                        if (dbCounts.ContainsKey(categoryName))
+                        {
+                            count = dbCounts[categoryName];
+                        }
+
+                        // Add the single point.
+                        categorySeries.Points.AddXY(categoryName, count);
+                    }
+
+                    // ----------------------------------------------------
+                    // 2. DATAGRIDVIEW LOADING (ALL RECORDS)
+                    // ----------------------------------------------------
+
+                    // DataGridView query now selects ALL records (no WHERE clause based on ward).
+                    string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
+                                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber";
+
+                    OleDbCommand comm = new OleDbCommand(myquaery, con);
+                    OleDbDataAdapter dm = new OleDbDataAdapter(comm);
+                    DataTable dtt = new DataTable();
+                    dm.Fill(dtt);
+                    dataGridView2.DataSource = dtt;
+
+                    con.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Assuming MessageBox.Show is available in this context (e.g., Windows Forms)
+                MessageBox.Show("ERROR!!\n" + ex.Message,
+                    "Marondera Provincial Hospital",
+                    MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+            }
+        }
     }
 }

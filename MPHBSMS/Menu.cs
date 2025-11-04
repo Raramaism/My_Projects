@@ -71,7 +71,7 @@ namespace MPHBSMS
             listBox2.Items.Add("AnteNatal Ward");
             listBox2.Items.Add("Labor Ward");
             listBox2.Items.Add("Accident and Emergence");
-            listBox1.Items.Add("Null");
+            listBox2.Items.Add("Null");
            
         }
 

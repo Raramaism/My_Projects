@@ -141,6 +141,7 @@
     <EmbeddedResource Include="Visual.resx">
       <DependentUpon>Visual.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="ClassDiagram2.cd" />
     <None Include="MPHDATABASEDataSet.xsc">
       <DependentUpon>MPHDATABASEDataSet.xsd</DependentUpon>
     </None>
