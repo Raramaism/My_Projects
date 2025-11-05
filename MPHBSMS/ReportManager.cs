@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-
 namespace MPHBSMS
 {
     // ==========================================================
@@ -18,7 +17,11 @@ namespace MPHBSMS
         Greeting,
         AskForPrimaryAction,
         AskForStartDate,
+        AskForStartMonth, // NEW: Sequential date state
+        AskForStartYear,  // NEW: Sequential date state
         AskForEndDate,
+        AskForEndMonth,   // NEW: Sequential date state
+        AskForEndYear,    // NEW: Sequential date state
         AskForDataScope,
         AskForDataAction,
         AskForSaveFormat,
@@ -31,29 +34,80 @@ namespace MPHBSMS
     {
         private List<string> _categories;
         public string PrimaryAction { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public string DataScope { get; set; }
-        public string DataAction { get; set; }
-        public string FileFormat { get; set; }
-        public string ReportName { get; set; }
+        public DateTime StartDate
+        {
+            get;
+            set;
+        }
+        public DateTime EndDate
+        {
+            get;
+            set;
+        }
+        public string DataScope
+        {
+            get;
+            set;
+        }
+        public string DataAction
+        {
+            get;
+            set;
+        }
+        public string FileFormat
+        {
+            get;
+            set;
+        }
+        public string ReportName
+        {
+            get;
+            set;
+        }
+
+        // NEW: Temporary storage for separate date inputs
+        public int? TempDay { get; set; }
+        public int? TempMonth { get; set; }
+        public int? TempYear { get; set; }
 
         public List<string> Categories
         {
-            get { return _categories; }
-            set { _categories = value; }
+            get
+            {
+                return _categories;
+            }
+            set
+            {
+                _categories = value;
+            }
         }
 
         public ReportRequest()
         {
             _categories = new List<string>();
         }
+
+        // NEW: Clears temporary date components
+        public void ClearTempDate()
+        {
+            TempDay = null;
+            TempMonth = null;
+            TempYear = null;
+        }
     }
 
     public class ProcessResult
     {
-        public bool Success { get; set; }
-        public string ErrorMessage { get; set; }
+        public bool Success
+        {
+            get;
+            set;
+        }
+        public string ErrorMessage
+        {
+            get;
+            set;
+        }
     }
 
     // ==========================================================
@@ -63,77 +117,59 @@ namespace MPHBSMS
     {
         // --- Fields & Properties ---
         private ConversationState _currentState;
+
         public ConversationState CurrentState
         {
-            get { return _currentState; }
-            set { _currentState = value; }
+            get
+            {
+                return _currentState;
+            }
+            set
+            {
+                _currentState = value;
+            }
         }
 
-        public ReportRequest CurrentRequest { get; private set; }
+        public ReportRequest CurrentRequest
+        {
+            get;
+            private set;
+        }
 
         private const string AppFolderName = "MyReportGeneratorFiles";
         private readonly string ReportDirectoryPath;
-
-  
-        /*
+        // **********************************************
+        // ACCEPTED DATE FORMATS
+        // **********************************************
         private static readonly string[] AcceptedDateFormats = new string[]
         {
-            /*"yyyy-MM-dd", "yyyy/MM/dd",
-            "MM-dd-yyyy", "MM/dd/yyyy",
-            "M-d-yyyy", "M/d/yyyy",
-            "dd-MM-yyyy", "dd/MM/yyyy",
-            "d-M-yyyy", "d/M/yyyy",
-            "dd-MMM-yyyy",
-            "yyyy-MM-dd", "yyyy/MM/dd", 
-            // New formats for more flexibility:
-            "yyyy-M-d", "yyyy/M-d",
+            // YYYY-MM-DD (ISO-like)
+            "yyyy-MM-dd", 
+            "yyyy/MM/dd",
+            "yyyy-M-d",   
             "yyyy/M/d", 
-            "yyyyMMdd", 
+            "yyyy-MM-dd HH:mm:ss", 
+            
+            // MM/DD/YYYY (US format)
+            "MM-dd-yyyy", 
+            "MM/dd/yyyy",
+            "M-d-yyyy",   
+            "M/d/yyyy", // M/d/yyyy
+            "MM/dd/yyyy HH:mm:ss", 
 
-            "MM-dd-yyyy", "MM/dd/yyyy",
-            "M-d-yyyy", "M/d-yyyy",
-            "M/d/yyyy",
-            "dd-MM-yyyy", "dd/MM/yyyy",
-            "d-M-yyyy", "d/M-yyyy",
+            // DD/MM/YYYY (European format)
+            "dd-MM-yyyy", 
+            "dd/MM/yyyy",
+            "d-M-yyyy",   
             "d/M/yyyy",
-            "dd-MMM-yyyy",
-            // Focus on the formats advertised to the user
-            "yyyy-MM-dd", "yyyy/MM/dd", 
-            "MM-dd-yyyy", "MM/dd/yyyy", 
+            "dd/MM/yyyy HH:mm:ss", 
+        };
+        // **********************************************
 
-            // Add single-digit month/day variations for robustness
-            "yyyy-M-d", "yyyy/M/d",
-            "M-d-yyyy", "M/d/yyyy"
-
-        };*/
-
-        // In MPHBSMS/ReportManager.cs (around line 20)
-private static readonly string[] AcceptedDateFormats = new string[]
-{
-    // YYYY-MM-DD formats (which the user is typing)
-    "yyyy-MM-dd", 
-    "yyyy/MM/dd", 
-    "yyyy-M-d", 
-    "yyyy/M/d",
-    
-    // MM/DD/YYYY formats
-    "MM-dd-yyyy", 
-    "MM/dd/yyyy", 
-    "M-d-yyyy", 
-    "M/d/yyyy",
-
-    // DD/MM/YYYY formats (often confused with MM/DD/YYYY, good to include)
-    "dd-MM-yyyy", 
-    "dd/MM/yyyy",
-    "d-M-yyyy", 
-    "d/M/yyyy" 
-};
-    
         private readonly List<string> ValidReportCategories = new List<string>
         {
             "Admission", "Deaths", "Transfers", "Discharges", "Consultations"
         };
-
         // --- Constructor ---
         public ReportManager()
         {
@@ -169,7 +205,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
 
             // sanitize input
             string cleanedInput = new string(input.Where(c => !char.IsControl(c)).ToArray()).Trim();
-
             bool isValid = ProcessInput(cleanedInput, out errorMessage);
 
             if (isValid)
@@ -180,8 +215,15 @@ private static readonly string[] AcceptedDateFormats = new string[]
                 }
                 else
                 {
+                    // Full state advance only happens if ProcessInput didn't use the special signal
                     MoveToNextState();
                 }
+            }
+            else if (errorMessage == "NEXT_STEP_OK")
+            {
+                // FIX: If the input was accepted and manually advanced the state 
+                // (e.g., Day -> Month), we signal success to the caller but skip MoveToNextState.
+                return new ProcessResult { Success = true, ErrorMessage = null };
             }
 
             return new ProcessResult { Success = isValid, ErrorMessage = errorMessage };
@@ -191,17 +233,16 @@ private static readonly string[] AcceptedDateFormats = new string[]
         {
             errorMessage = null;
             bool isValid = false;
-
             DateTime parsedDate;
             List<string> selectedCategories;
             string reportName;
+            int parsedNumber;
 
             switch (CurrentState)
             {
                 case ConversationState.Greeting:
                 case ConversationState.AskForPrimaryAction:
                     string lowerInput = cleanedInput.ToLower();
-
                     if (lowerInput.Contains("generate") || lowerInput.Contains("create") || lowerInput.Contains("make report"))
                     {
                         CurrentRequest.PrimaryAction = "GenerateReport";
@@ -219,17 +260,78 @@ private static readonly string[] AcceptedDateFormats = new string[]
                     break;
 
                 case ConversationState.AskForStartDate:
+                    CurrentRequest.ClearTempDate(); // Start of StartDate process
+
                     if (TryParseSingleDate(cleanedInput, out parsedDate, out errorMessage))
                     {
-                       
+                        // 1. Single date input (e.g., "2023-01-01")
                         CurrentRequest.StartDate = parsedDate;
                         isValid = true;
+                    }
+                    else if (int.TryParse(cleanedInput, out parsedNumber) && parsedNumber >= 1 && parsedNumber <= 31)
+                    {
+                        // 2. Separate date input (e.g., "1" for day)
+                        CurrentRequest.TempDay = parsedNumber;
+                        // Manual state transition for sequential input
+                        CurrentState = ConversationState.AskForStartMonth;
+                        // Signal manual advance success without triggering MoveToNextState
+                        errorMessage = "NEXT_STEP_OK";
+                    }
+                    else
+                    {
+                        errorMessage = "Invalid input. Please enter a full date (e.g., 2023-01-01) or just the **Day** (1-31) to start sequential input.";
+                    }
+
+                    break;
+
+                case ConversationState.AskForStartMonth:
+                    if (int.TryParse(cleanedInput, out parsedNumber) && parsedNumber >= 1 && parsedNumber <= 12)
+                    {
+                        CurrentRequest.TempMonth = parsedNumber;
+                        // Manual state transition for sequential input
+                        CurrentState = ConversationState.AskForStartYear;
+                        // Signal manual advance success without triggering MoveToNextState
+                        errorMessage = "NEXT_STEP_OK";
+                    }
+                    else
+                    {
+                        errorMessage = "Invalid month. Please enter a number between 1 and 12.";
+                    }
+                    break;
+
+                case ConversationState.AskForStartYear:
+                    if (int.TryParse(cleanedInput, out parsedNumber) && parsedNumber >= 1900 && parsedNumber <= DateTime.Now.Year + 5)
+                    {
+                        // Use DateTime constructor
+                        int year = parsedNumber;
+                        // Use 1 as default if TempMonth/TempDay somehow got wiped (safety)
+                        int month = CurrentRequest.TempMonth ?? 1;
+                        int day = CurrentRequest.TempDay ?? 1;
+
+                        try
+                        {
+                            CurrentRequest.StartDate = new DateTime(year, month, day);
+                            CurrentRequest.ClearTempDate();
+                            isValid = true;
+                            // Will trigger MoveToNextState
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            errorMessage = "The date entered (" + day + "/" + month + "/" + year + ") is invalid (e.g., February 30th).";
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "Invalid year. Please enter a four-digit year (e.g., 2024).";
                     }
                     break;
 
                 case ConversationState.AskForEndDate:
+                    CurrentRequest.ClearTempDate(); // Start of EndDate process
+
                     if (TryParseSingleDate(cleanedInput, out parsedDate, out errorMessage))
                     {
+                        // 1. Single date input
                         if (parsedDate < CurrentRequest.StartDate)
                         {
                             errorMessage = "The end date cannot be before the start date (" + CurrentRequest.StartDate.ToShortDateString() + ").";
@@ -239,6 +341,72 @@ private static readonly string[] AcceptedDateFormats = new string[]
                             CurrentRequest.EndDate = parsedDate;
                             isValid = true;
                         }
+                    }
+                    else if (int.TryParse(cleanedInput, out parsedNumber) && parsedNumber >= 1 && parsedNumber <= 31)
+                    {
+                        // 2. Separate date input (e.g., "31" for day)
+                        CurrentRequest.TempDay = parsedNumber;
+                        // Manual state transition for sequential input
+                        CurrentState = ConversationState.AskForEndMonth;
+                        // Signal manual advance success
+                        errorMessage = "NEXT_STEP_OK";
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(errorMessage))
+                            errorMessage = "Unrecognized date. Please enter a full date (e.g., 2023-10-31 or 31/10/2023) or just the **Day** (1-31).";
+                    }
+
+
+                    break;
+
+                case ConversationState.AskForEndMonth:
+                    if (int.TryParse(cleanedInput, out parsedNumber) && parsedNumber >= 1 && parsedNumber <= 12)
+                    {
+                        CurrentRequest.TempMonth = parsedNumber;
+                        // Manual state transition for sequential input
+                        CurrentState = ConversationState.AskForEndYear;
+                        // Signal manual advance success
+                        errorMessage = "NEXT_STEP_OK";
+                    }
+                    else
+                    {
+                        errorMessage = "Invalid month. Please enter a number between 1 and 12.";
+                    }
+                    break;
+
+                case ConversationState.AskForEndYear:
+                    if (int.TryParse(cleanedInput, out parsedNumber) && parsedNumber >= 1900 && parsedNumber <= DateTime.Now.Year + 5)
+                    {
+                        // Use DateTime constructor
+                        int year = parsedNumber;
+                        int month = CurrentRequest.TempMonth ?? 1;
+                        int day = CurrentRequest.TempDay ?? 1;
+
+                        try
+                        {
+                            parsedDate = new DateTime(year, month, day);
+
+                            if (parsedDate < CurrentRequest.StartDate)
+                            {
+                                errorMessage = "The final end date (" + day + "/" + month + "/" + year + ") cannot be before the start date (" + CurrentRequest.StartDate.ToShortDateString() + ").";
+                            }
+                            else
+                            {
+                                CurrentRequest.EndDate = parsedDate;
+                                CurrentRequest.ClearTempDate();
+                                isValid = true;
+                                // State will now advance to AskForDataScope via MoveToNextState
+                            }
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            errorMessage = "The final end date entered (" + day + "/" + month + "/" + year + ") is invalid (e.g., February 30th).";
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "Invalid year. Please enter a four-digit year (e.g., 2024).";
                     }
                     break;
 
@@ -260,7 +428,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
                         }
                     }
                     break;
-
                 case ConversationState.AskForDataAction:
                     if (cleanedInput.Equals("Save File", StringComparison.OrdinalIgnoreCase) ||
                         cleanedInput.Equals("Save", StringComparison.OrdinalIgnoreCase))
@@ -283,7 +450,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
                         errorMessage = "Please enter 'Save File', 'Print', or 'Display'.";
                     }
                     break;
-
                 case ConversationState.AskForSaveFormat:
                     if (cleanedInput.Equals("PDF", StringComparison.OrdinalIgnoreCase))
                     {
@@ -300,7 +466,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
                         errorMessage = "Please enter 'PDF' or 'DOCX'.";
                     }
                     break;
-
                 case ConversationState.AskForReportToOpen:
                     if (FileExistsInReportDir(cleanedInput, out reportName, out errorMessage))
                     {
@@ -308,7 +473,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
                         isValid = true;
                     }
                     break;
-
                 case ConversationState.ConfirmationAndGenerate:
                     if (cleanedInput.Equals("Confirm", StringComparison.OrdinalIgnoreCase) ||
                         cleanedInput.Equals("Yes", StringComparison.OrdinalIgnoreCase) ||
@@ -332,22 +496,42 @@ private static readonly string[] AcceptedDateFormats = new string[]
             {
                 case ConversationState.Greeting:
                 case ConversationState.AskForPrimaryAction:
-                    CurrentState = (CurrentRequest.PrimaryAction == "GenerateReport")
-                        ? ConversationState.AskForStartDate
+                    CurrentState = (CurrentRequest.PrimaryAction
+                        == "GenerateReport")
+                        ?
+                        ConversationState.AskForStartDate
                         : ConversationState.AskForReportToOpen;
                     break;
+
+                // --- Start Date Transitions (Major Step Completion) ---
                 case ConversationState.AskForStartDate:
+                    // Only reached if a FULL date was entered.
                     CurrentState = ConversationState.AskForEndDate;
                     break;
+
+                case ConversationState.AskForStartYear:
+                    // Sequential date was completed.
+                    CurrentState = ConversationState.AskForEndDate;
+                    break;
+
+                // --- End Date Transitions (Major Step Completion) ---
                 case ConversationState.AskForEndDate:
+                    // Only reached if a FULL date was entered.
                     CurrentState = ConversationState.AskForDataScope;
                     break;
+
+                case ConversationState.AskForEndYear:
+                    // Sequential date was completed.
+                    CurrentState = ConversationState.AskForDataScope;
+                    break;
+
                 case ConversationState.AskForDataScope:
                     CurrentState = ConversationState.AskForDataAction;
                     break;
                 case ConversationState.AskForDataAction:
                     CurrentState = (CurrentRequest.DataAction == "Save File")
-                        ? ConversationState.AskForSaveFormat
+                        ?
+                        ConversationState.AskForSaveFormat
                         : ConversationState.ConfirmationAndGenerate;
                     break;
                 case ConversationState.AskForSaveFormat:
@@ -364,19 +548,33 @@ private static readonly string[] AcceptedDateFormats = new string[]
             switch (CurrentState)
             {
                 case ConversationState.Greeting:
-                    return "Welcome to the Report Generator! I'm here to guide you through creating or opening a report.";
+                    return "Welcome to the Report Generator! I'm here to guide you"
++ "\n" +
+                        "through creating or opening a report.";
                 case ConversationState.AskForPrimaryAction:
-                    return "Do you want to Generate or Open an existing report?";
+                    return "Do you want to **Generate** or **Open** an existing report?";
+
+                // Updated Prompts for Hybrid/Sequential Date Input
                 case ConversationState.AskForStartDate:
-                    return "What is the Start Date for the report? (e.g., '2023-01-01' or '01/01/2023')";
+                    return "What is the **Start Date** for the report? You can enter the full date (e.g., '**2023-01-01**' or '**01/01/2023**') OR just the **Day** number (1-31) to start sequential input.";
+                case ConversationState.AskForStartMonth:
+                    return "Please enter the **Month** number for the start date (1-12).";
+                case ConversationState.AskForStartYear:
+                    return "Please enter the **Year** for the start date (e.g., 2024).";
                 case ConversationState.AskForEndDate:
-                    return "What is the End Date for the report? (e.g., '2023-10-31' or '10/31/2023')";
+                    return "What is the **End Date** for the report? You can enter the full date (e.g., '**2023-10-31**' or '**10/31/2023**') OR just the **Day** number (1-31) to start sequential input.";
+                case ConversationState.AskForEndMonth:
+                    return "Please enter the **Month** number for the end date (1-12).";
+                case ConversationState.AskForEndYear:
+                    return "Please enter the **Year** for the end date (e.g., 2024).";
+                // End Updated Prompts
+
                 case ConversationState.AskForDataScope:
-                    return "Do you want All Data or specific categories? (Valid: " + string.Join(", ", ValidReportCategories) + " or 'All')";
+                    return "Do you want **All Data** or specific categories? (Valid: " + string.Join(", ", ValidReportCategories) + " or 'All')";
                 case ConversationState.AskForDataAction:
-                    return "What do you want to do with the data? (Save File, Print, or Display)";
+                    return "What do you want to do with the data? (**Save File**, **Print**, or **Display**)";
                 case ConversationState.AskForSaveFormat:
-                    return "What format do you want to save as? (PDF or DOCX)";
+                    return "What format do you want to save as? (**PDF** or **DOCX**)";
                 case ConversationState.AskForReportToOpen:
                     string list = string.Join("\n - ", GetAvailableReports());
                     return "What is the name of the existing report you want to open?\n\nAvailable Reports:\n - " + list;
@@ -400,7 +598,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
             StringBuilder actionMessage = new StringBuilder();
             actionMessage.AppendLine("Report Generation for scope: " + CurrentRequest.DataScope + " (Dates: " +
                                      CurrentRequest.StartDate.ToShortDateString() + " to " + CurrentRequest.EndDate.ToShortDateString() + ")");
-
             if (CurrentRequest.DataScope == "By Category" && CurrentRequest.Categories.Any())
             {
                 actionMessage.AppendLine("Categories: " + string.Join(", ", CurrentRequest.Categories));
@@ -409,7 +606,8 @@ private static readonly string[] AcceptedDateFormats = new string[]
             switch (CurrentRequest.DataAction)
             {
                 case "Save File":
-                    string fileName = "Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "." + (CurrentRequest.FileFormat ?? "txt").ToLower();
+                    string fileName = "Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "."
+                        + (CurrentRequest.FileFormat ?? "txt").ToLower();
                     string fullFilePath = Path.Combine(ReportDirectoryPath, fileName);
 
                     if (SaveReportContent(CurrentRequest, fullFilePath))
@@ -422,7 +620,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
                         actionMessage.AppendLine("Failure: Could not save the report file (Check folder access: " + ReportDirectoryPath + ").");
                     }
                     break;
-
                 case "Print":
                     actionMessage.AppendLine("Action: Sending report content to the printer queue.");
                     break;
@@ -438,14 +635,13 @@ private static readonly string[] AcceptedDateFormats = new string[]
         private bool SaveReportContent(ReportRequest request, string fullPath)
         {
             if (ReportDirectoryPath == null) return false;
-
             try
             {
                 string content = "Report Generated: " + DateTime.Now.ToString() + "\n" +
                                  "Time Frame: " + request.StartDate.ToShortDateString() + " to " + request.EndDate.ToShortDateString() + "\n" +
+
                                  "Scope: " + request.DataScope + " (Categories: " + string.Join(", ", request.Categories) + ")\n" +
                                  "Action: Save as " + request.FileFormat;
-
                 File.WriteAllText(fullPath, content);
                 return true;
             }
@@ -454,56 +650,66 @@ private static readonly string[] AcceptedDateFormats = new string[]
                 return false;
             }
         }
-        private bool TryParseSingleDate(string input, out DateTime date, out string error)
-        {
-            date = DateTime.MinValue;
-            error = null;
 
-            // Alternative 1: Try the flexible, culture-aware TryParse first. 
-            // This often succeeds when TryParseExact fails due to minor format variations.
-           /* if (DateTime.TryParse(input, out date))
-            {
-                return true;
-            }*/
-            if (DateTime.TryParse(input, out date)) // Line 108
-            {
-                return true;
-            }
-            
-            // Alternative 2: Fall back to the strict TryParseExact (your original method),
-            // but add the AllowWhiteSpaces flag for resilience against input artifacts.
-            if (DateTime.TryParseExact(
-                    input, 
-                    AcceptedDateFormats, 
-                    CultureInfo.InvariantCulture, 
-                    DateTimeStyles.None | DateTimeStyles.AllowWhiteSpaces,
-                    out date))
-            {
-                return true;
-            }
+        // *****************************************************************
+        // TryParseSingleDate METHOD
+        // *****************************************************************
+    
+         private bool TryParseSingleDate(string input, out DateTime date, out string error)
+{
+    date = DateTime.MinValue;
+    error = null;
 
-            error = "Invalid date format. Please use a valid format (e.g., YYYY-MM-DD or MM/DD/YYYY).";
-            return false;
-        }
+    if (string.IsNullOrWhiteSpace(input))
+    {
+        error = "Date input cannot be empty.";
+        return false;
+    }
 
-        private bool TryParseSingleDate(string input, out DateTime date, out string error)
-        {
-            date = DateTime.MinValue; error = null;
+    input = input.Trim();
 
-            if (!DateTime.TryParseExact(input, AcceptedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
-            {
-                error = "Invalid date format. Please use a valid format (e.g., YYYY-MM-DD or MM/DD/YYYY).";
-                return false;
-            }
+    // Try exact known formats first
+    if (DateTime.TryParseExact(
+        input,
+        AcceptedDateFormats,
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.None,
+        out date))
+    {
+        return true;
+    }
 
-            return true;
-        }
-        
+    // --- FLEXIBLE FALLBACK ---
+    // Try a culture-neutral parse (handles “01/10/2025”, “1-10-25”, etc.)
+    if (DateTime.TryParse(
+        input,
+        new CultureInfo("en-GB"), // Use UK order (dd/MM/yyyy)
+        DateTimeStyles.None,
+        out date))
+    {
+        return true;
+    }
+
+    // Try US fallback just in case
+    if (DateTime.TryParse(
+        input,
+        new CultureInfo("en-US"),
+        DateTimeStyles.None,
+        out date))
+    {
+        return true;
+    }
+
+    // --- If nothing worked ---
+    error = "Invalid input. Please enter a date like 2025-10-01 or 01/10/2025.";
+    return false;
+}
+
         private bool TryParseCategories(string input, out List<string> selectedCategories, out string error)
         {
-            selectedCategories = new List<string>(); error = null;
+            selectedCategories = new List<string>();
+            error = null;
             var rawCategories = input.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).ToList();
-
             foreach (var category in rawCategories)
             {
                 if (ValidReportCategories.Contains(category, StringComparer.OrdinalIgnoreCase))
@@ -521,15 +727,31 @@ private static readonly string[] AcceptedDateFormats = new string[]
 
         public bool FileExistsInReportDir(string input, out string reportName, out string error)
         {
-            reportName = null; error = null;
-            if (ReportDirectoryPath == null) { error = "Report directory is not accessible."; return false; }
+            reportName = null;
+            error = null;
+            if (ReportDirectoryPath == null)
+            {
+                error = "Report directory is not accessible."; return false;
+            }
 
             string fullPathToCheck = Path.Combine(ReportDirectoryPath, input);
             if (File.Exists(fullPathToCheck)) { reportName = input; return true; }
 
-            if (File.Exists(fullPathToCheck + ".pdf")) { reportName = input + ".pdf"; return true; }
-            if (File.Exists(fullPathToCheck + ".docx")) { reportName = input + ".docx"; return true; }
-            if (File.Exists(fullPathToCheck + ".txt")) { reportName = input + ".txt"; return true; }
+            if (File.Exists(fullPathToCheck + ".pdf"))
+            {
+                reportName = input + ".pdf";
+                return true;
+            }
+            if (File.Exists(fullPathToCheck + ".docx"))
+            {
+                reportName = input + ".docx";
+                return true;
+            }
+            if (File.Exists(fullPathToCheck + ".txt"))
+            {
+                reportName = input + ".txt";
+                return true;
+            }
 
             error = "Could not find a report file named '" + input + "'.";
             return false;
@@ -539,7 +761,8 @@ private static readonly string[] AcceptedDateFormats = new string[]
         {
             if (ReportDirectoryPath == null || !Directory.Exists(ReportDirectoryPath))
             {
-                return new List<string> { "Error: Directory not found." };
+                return new List<string> { "Error: Directory not found."
+                };
             }
 
             try
@@ -547,10 +770,10 @@ private static readonly string[] AcceptedDateFormats = new string[]
                 var files = Directory.GetFiles(ReportDirectoryPath)
                     .Select(Path.GetFileName)
                     .Where(name => name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ||
-                                   name.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) ||
+
+                               name.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) ||
                                    name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                     .ToList();
-
                 return files.Any() ? files : new List<string> { "No reports found." };
             }
             catch (Exception ex)
@@ -559,7 +782,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
             }
         }
     }
-
     // ==========================================================
     // 3. NLP Processor
     // ==========================================================
@@ -573,30 +795,32 @@ private static readonly string[] AcceptedDateFormats = new string[]
             { "PatientInfo", new[] { "admit", "patient", "who is", "who's", "details", "info", "profile" } },
             { "MovementInfo", new[] { "move", "transfer", "ward", "shift", "relocate" } },
             { "ReportManager", new[] { "report", "summary", "generate", "create report", "make report" } },
+          
             { "OpenReport", new[] { "open report", "show report", "access report", "view report" } },
             { "CountInfo", new[] { "count", "how many", "total", "statistics", "number of" } }
         };
-
         public string ExtractIntent(string message)
         {
-            if (string.IsNullOrWhiteSpace(message)) return _lastIntent ?? "Unknown";
+            if (string.IsNullOrWhiteSpace(message)) return _lastIntent ??
+                "Unknown";
             message = message.ToLower();
 
             Dictionary<string, int> scores = new Dictionary<string, int>();
-
             foreach (var kvp in _intentKeywords)
             {
                 foreach (var keyword in kvp.Value)
                 {
                     if (message.Contains(keyword))
                     {
+
                         if (scores.ContainsKey(kvp.Key)) scores[kvp.Key] = scores[kvp.Key] + 1;
                         else scores[kvp.Key] = 1;
                     }
                 }
             }
 
-            if (scores.Count == 0) return _lastIntent ?? "Unknown";
+            if (scores.Count == 0) return _lastIntent ??
+                "Unknown";
 
             string best = scores.OrderByDescending(s => s.Value).First().Key;
             _lastIntent = best;
@@ -667,7 +891,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
         private NLPProcessor _nlp;
         private ReportManager _reportManager;
         private List<Tuple<string, string>> _conversationHistory;
-
         public MphFullFeatureChatBot()
         {
             _nlp = new NLPProcessor();
@@ -708,9 +931,9 @@ private static readonly string[] AcceptedDateFormats = new string[]
         {
             // record user in history
             _conversationHistory.Add(Tuple.Create("User", userMessage));
-
             // use the central MPHBSMS class to get current user
-            string currentUser = MPHBSMS.CurrentUser ?? "UnknownUser";
+            string currentUser = MPHBSMS.CurrentUser ??
+                "UnknownUser";
 
             // NLP
             string intent = _nlp.ExtractIntent(userMessage);
@@ -725,22 +948,24 @@ private static readonly string[] AcceptedDateFormats = new string[]
             }
 
             string response = string.Empty;
-
             // If the report flow is already started, prioritize that conversation
             if (_reportManager != null && _reportManager.CurrentState != ConversationState.AskForPrimaryAction &&
                 _reportManager.CurrentState != ConversationState.Complete)
             {
                 // let the report manager state machine handle it
+
                 ProcessResult pr = _reportManager.ProcessAndAdvance(userMessage);
                 if (!pr.Success)
                 {
-                    response = "⚠ " + pr.ErrorMessage + "\n" + _reportManager.GetCurrentPrompt();
+                    // FIX: Double newline ensures the next prompt starts on a new line and separates the error
+                    response = "⚠ " + pr.ErrorMessage + "\n\n" + _reportManager.GetCurrentPrompt();
                 }
                 else
                 {
                     if (_reportManager.CurrentState == ConversationState.Complete)
                     {
-                        response = _reportManager.ExecuteReportLogic();
+                        response
+                            = _reportManager.ExecuteReportLogic();
                     }
                     else
                     {
@@ -769,7 +994,6 @@ private static readonly string[] AcceptedDateFormats = new string[]
                     _reportManager.CurrentState = ConversationState.AskForPrimaryAction;
                     response = "Do you want to generate a new report or open an existing one? (type 'Generate' or 'Open')";
                     break;
-
                 case "OpenReport":
                     // direct open attempt
                     response = HandleOpenReport(userMessage);
@@ -792,15 +1016,14 @@ private static readonly string[] AcceptedDateFormats = new string[]
 
         private string RespondWithPatientInfo(Dictionary<string, string> entities)
         {
-            string hn = entities.ContainsKey("hospitalNumber") ? entities["hospitalNumber"] : null;
+            string hn = entities.ContainsKey("hospitalNumber") ?
+                entities["hospitalNumber"] : null;
             if (hn == null) return "Please provide a hospital number (e.g., 'who is patient 12345').";
-
             string connErr = EnsureConnectionOpen();
             if (connErr != null) return connErr;
 
             string patientInfo = string.Empty;
             string query = "SELECT name, gender, currentWard, isAdmitted, admissionDate, dischargeDate FROM tblPatientMaster WHERE hospitalNumber = '" + hn + "'";
-
             try
             {
                 using (OleDbCommand cmd = new OleDbCommand(query, _con))
@@ -808,13 +1031,14 @@ private static readonly string[] AcceptedDateFormats = new string[]
                 {
                     if (reader.Read())
                     {
-                        string name = reader["name"] == DBNull.Value ? "N/A" : reader["name"].ToString();
+                        string name = reader["name"] == DBNull.Value ?
+                            "N/A" : reader["name"].ToString();
                         string gender = reader["gender"] == DBNull.Value ? "N/A" : reader["gender"].ToString();
-                        string ward = reader["currentWard"] == DBNull.Value ? "N/A" : reader["currentWard"].ToString();
+                        string ward = reader["currentWard"] == DBNull.Value ?
+                            "N/A" : reader["currentWard"].ToString();
                         string isAdmitted = (reader["isAdmitted"] != DBNull.Value && reader["isAdmitted"].ToString() == "True") ? "Yes" : "No";
                         string admDate = reader["admissionDate"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["admissionDate"]).ToString("yyyy-MM-dd");
                         string disDate = reader["dischargeDate"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["dischargeDate"]).ToString("yyyy-MM-dd");
-
                         patientInfo = "Patient: " + name + " (" + gender + "), Current Ward: " + ward + ", Admitted: " + isAdmitted + ", Admission Date: " + admDate + ", Discharge Date: " + disDate;
                     }
                     else
@@ -832,12 +1056,11 @@ private static readonly string[] AcceptedDateFormats = new string[]
 
         private string RespondWithMovementInfo(Dictionary<string, string> entities)
         {
-            string hn = entities.ContainsKey("hospitalNumber") ? entities["hospitalNumber"] : null;
+            string hn = entities.ContainsKey("hospitalNumber") ?
+                entities["hospitalNumber"] : null;
             if (hn == null) return "Please provide a hospital number to show movement history.";
-
             string connErr = EnsureConnectionOpen();
             if (connErr != null) return connErr;
-
             string query = "SELECT MovementDateTime, fromWard, toWard, category FROM tblPatientMovement WHERE hospitalNumber = '" + hn + "' ORDER BY MovementDateTime DESC";
             List<string> lines = new List<string>();
             try
@@ -847,11 +1070,11 @@ private static readonly string[] AcceptedDateFormats = new string[]
                 {
                     while (reader.Read())
                     {
-                        string dt = reader["MovementDateTime"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["MovementDateTime"]).ToString("yyyy-MM-dd HH:mm");
+                        string dt = reader["MovementDateTime"] == DBNull.Value ?
+                            "N/A" : Convert.ToDateTime(reader["MovementDateTime"]).ToString("yyyy-MM-dd HH:mm");
                         string fromWard = reader["fromWard"] == DBNull.Value ? "Unknown" : reader["fromWard"].ToString();
                         string toWard = reader["toWard"] == DBNull.Value ? "Unknown" : reader["toWard"].ToString();
                         string category = reader["category"] == DBNull.Value ? "Transfer" : reader["category"].ToString();
-
                         lines.Add(dt + " | " + fromWard + " -> " + toWard + " (" + category + ")");
                     }
                 }
