@@ -75,7 +75,7 @@ namespace MPHBSMS
         private readonly string ReportDirectoryPath;
 
   
-        
+        /*
         private static readonly string[] AcceptedDateFormats = new string[]
         {
             /*"yyyy-MM-dd", "yyyy/MM/dd",
@@ -96,7 +96,7 @@ namespace MPHBSMS
             "dd-MM-yyyy", "dd/MM/yyyy",
             "d-M-yyyy", "d/M-yyyy",
             "d/M/yyyy",
-            "dd-MMM-yyyy",*/
+            "dd-MMM-yyyy",
             // Focus on the formats advertised to the user
             "yyyy-MM-dd", "yyyy/MM/dd", 
             "MM-dd-yyyy", "MM/dd/yyyy", 
@@ -105,7 +105,29 @@ namespace MPHBSMS
             "yyyy-M-d", "yyyy/M/d",
             "M-d-yyyy", "M/d/yyyy"
 
-        };
+        };*/
+
+        // In MPHBSMS/ReportManager.cs (around line 20)
+private static readonly string[] AcceptedDateFormats = new string[]
+{
+    // YYYY-MM-DD formats (which the user is typing)
+    "yyyy-MM-dd", 
+    "yyyy/MM/dd", 
+    "yyyy-M-d", 
+    "yyyy/M/d",
+    
+    // MM/DD/YYYY formats
+    "MM-dd-yyyy", 
+    "MM/dd/yyyy", 
+    "M-d-yyyy", 
+    "M/d/yyyy",
+
+    // DD/MM/YYYY formats (often confused with MM/DD/YYYY, good to include)
+    "dd-MM-yyyy", 
+    "dd/MM/yyyy",
+    "d-M-yyyy", 
+    "d/M/yyyy" 
+};
     
         private readonly List<string> ValidReportCategories = new List<string>
         {
@@ -439,7 +461,11 @@ namespace MPHBSMS
 
             // Alternative 1: Try the flexible, culture-aware TryParse first. 
             // This often succeeds when TryParseExact fails due to minor format variations.
-            if (DateTime.TryParse(input, out date))
+           /* if (DateTime.TryParse(input, out date))
+            {
+                return true;
+            }*/
+            if (DateTime.TryParse(input, out date)) // Line 108
             {
                 return true;
             }
@@ -459,7 +485,8 @@ namespace MPHBSMS
             error = "Invalid date format. Please use a valid format (e.g., YYYY-MM-DD or MM/DD/YYYY).";
             return false;
         }
-       /* private bool TryParseSingleDate(string input, out DateTime date, out string error)
+
+        private bool TryParseSingleDate(string input, out DateTime date, out string error)
         {
             date = DateTime.MinValue; error = null;
 
@@ -471,7 +498,7 @@ namespace MPHBSMS
 
             return true;
         }
-        */
+        
         private bool TryParseCategories(string input, out List<string> selectedCategories, out string error)
         {
             selectedCategories = new List<string>(); error = null;
