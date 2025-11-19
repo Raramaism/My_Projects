@@ -25,7 +25,7 @@ public static class ChatLogger
         else
         {
             // Fallback to default font if the RichTextBox font is somehow null
-            rtb.SelectionFont = new Font("Arial", 10, isBold ? FontStyle.Bold : FontStyle.Regular);
+            rtb.SelectionFont = new Font("Times New Roman", 12, isBold ? FontStyle.Bold : FontStyle.Regular);
         }
 
         // 3. Append the text followed by a new line

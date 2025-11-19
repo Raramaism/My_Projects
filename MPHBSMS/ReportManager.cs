@@ -44,6 +44,8 @@ namespace MPHBSMS
         public ReportRequest()
         {
             Categories = new List<string>();
+            StartDate = DateTime.Now.Date;
+            EndDate = DateTime.Now.Date;
         }
 
         public void ClearTempDate()
@@ -51,6 +53,16 @@ namespace MPHBSMS
             TempDay = null;
             TempMonth = null;
             TempYear = null;
+        }
+
+        public string StartDateString
+        {
+            get { return StartDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture); }
+        }
+
+        public string EndDateString
+        {
+            get { return EndDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture); }
         }
     }
 
@@ -92,7 +104,10 @@ namespace MPHBSMS
             {
                 string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 string finalPath = Path.Combine(documentsPath, AppFolderName);
-                if (!Directory.Exists(finalPath)) Directory.CreateDirectory(finalPath);
+                if (!Directory.Exists(finalPath))
+                {
+                    Directory.CreateDirectory(finalPath);
+                }
                 return finalPath;
             }
             catch (Exception)
@@ -152,7 +167,6 @@ namespace MPHBSMS
                     }
                     break;
 
-                // === START DATE ===
                 case ConversationState.AskForStartDate:
                     CurrentRequest.ClearTempDate();
                     if (TryParseSingleDate(cleanedInput, out parsedDate, out errorMessage))
@@ -210,14 +224,13 @@ namespace MPHBSMS
                     }
                     break;
 
-                // === END DATE ===
                 case ConversationState.AskForEndDate:
                     CurrentRequest.ClearTempDate();
                     if (TryParseSingleDate(cleanedInput, out parsedDate, out errorMessage))
                     {
                         if (parsedDate < CurrentRequest.StartDate)
                         {
-                            errorMessage = "End date cannot be before start date (" + CurrentRequest.StartDate.ToShortDateString() + ").";
+                            errorMessage = "End date cannot be before start date (" + CurrentRequest.StartDateString + ").";
                         }
                         else
                         {
@@ -262,7 +275,7 @@ namespace MPHBSMS
                         {
                             parsedDate = new DateTime(year, month, day);
                             if (parsedDate < CurrentRequest.StartDate)
-                                errorMessage = "End date cannot be before start date (" + CurrentRequest.StartDate.ToShortDateString() + ").";
+                                errorMessage = "End date cannot be before start date (" + CurrentRequest.StartDateString + ").";
                             else
                             {
                                 CurrentRequest.EndDate = parsedDate;
@@ -285,9 +298,6 @@ namespace MPHBSMS
             return isValid;
         }
 
-        // =============================================================
-        // ✅ FIXED DATE PARSING (ACCEPTS MULTIPLE FORMATS)
-        // =============================================================
         private bool TryParseSingleDate(string input, out DateTime date, out string error)
         {
             date = DateTime.MinValue;
@@ -299,38 +309,63 @@ namespace MPHBSMS
                 return false;
             }
 
-            input = input.Trim()
-                         .Replace('/', '-')
-                         .Replace('.', '-')
-                         .Replace('\\', '-')
-                         .Replace('_', '-');
+            // Keep original and also a normalized version (all separators -> '-')
+            string original = input.Trim();
+            string normalized = original.Replace('\\', '-')
+                                        .Replace('/', '-')
+                                        .Replace('.', '-')
+                                        .Replace('_', '-')
+                                        .Trim();
 
-            string[] formats = {
-                "yyyy-MM-dd", "dd-MM-yyyy", "MM-dd-yyyy",
-                "d-M-yyyy", "yyyy-M-d", "dd-MMM-yyyy",
-                "yyyyMMdd", "dd.MM.yyyy", "yyyy.MM.dd",
-                "d/M/yyyy", "M/d/yyyy"
-            };
+            // Common patterns (with both '-' and '/' versions included)
+            string[] formats = new string[]
+    {
+        "yyyy-MM-dd", "yyyy/MM/dd",
+        "dd-MM-yyyy", "dd/MM/yyyy",
+        "MM-dd-yyyy", "MM/dd/yyyy",
+        "d-M-yyyy",   "d/M/yyyy",
+        "M-d-yyyy",   "M/d/yyyy",
+        "yyyy-M-d",
+        "dd-MMM-yyyy",
+        "yyyyMMdd",
+        "ddMMyyyy"
+    };
 
-            if (DateTime.TryParseExact(input, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+            // 1) Try exact parse on the normalized string with invariant culture
+            foreach (string fmt in formats)
+            {
+                // try format as-is on normalized (which uses '-')
+                string fmtNormalized = fmt.Replace('/', '-');
+                if (DateTime.TryParseExact(normalized, fmtNormalized, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+                    return true;
+
+                // try format as-is on original (preserves '/' if present)
+                if (DateTime.TryParseExact(original, fmt, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+                    return true;
+            }
+
+            // 2) Try broad parsing with several cultures (lenient)
+            if (DateTime.TryParse(normalized, new CultureInfo("en-GB"), DateTimeStyles.None, out date))
                 return true;
 
-            if (DateTime.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out date))
+            if (DateTime.TryParse(normalized, new CultureInfo("en-US"), DateTimeStyles.None, out date))
                 return true;
 
-            if (DateTime.TryParse(input, new CultureInfo("en-GB"), DateTimeStyles.AssumeLocal, out date))
+            if (DateTime.TryParse(original, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
                 return true;
 
-            if (DateTime.TryParse(input, new CultureInfo("en-US"), DateTimeStyles.AssumeLocal, out date))
+            if (DateTime.TryParse(original, CultureInfo.CurrentCulture, DateTimeStyles.None, out date))
+                return true;
+
+            // final fallback: try removing extra spaces and try parse again
+            string compact = new string(original.Where(c => !char.IsWhiteSpace(c)).ToArray());
+            if (DateTime.TryParse(compact, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
                 return true;
 
             error = "Invalid date. Please enter a valid date like 2025-10-01 or 01/10/2025.";
             return false;
         }
 
-        // =============================================================
-        // MOVE TO NEXT STATE
-        // =============================================================
         private void MoveToNextState()
         {
             switch (CurrentState)
@@ -351,9 +386,7 @@ namespace MPHBSMS
             }
         }
 
-        // =============================================================
-        // EXECUTE REPORT LOGIC
-        // =============================================================
+        // === IMPLEMENTED REPORT GENERATION ===
         public string ExecuteReportLogic()
         {
             if (CurrentRequest.PrimaryAction == "OpenExisting")
@@ -363,39 +396,27 @@ namespace MPHBSMS
 
             StringBuilder actionMessage = new StringBuilder();
             actionMessage.AppendLine("Report Generation for scope: " + CurrentRequest.DataScope +
-                                     " (Dates: " + CurrentRequest.StartDate.ToShortDateString() +
-                                     " to " + CurrentRequest.EndDate.ToShortDateString() + ")");
+                                     " (Dates: " + CurrentRequest.StartDateString +
+                                     " to " + CurrentRequest.EndDateString + ")");
 
             if (CurrentRequest.DataScope == "By Category" && CurrentRequest.Categories.Any())
             {
                 actionMessage.AppendLine("Categories: " + string.Join(", ", CurrentRequest.Categories));
             }
 
-            switch (CurrentRequest.DataAction)
+            // Choose file format
+            string format = (CurrentRequest.FileFormat ?? "txt").ToLower();
+            string fileName = "Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "." + format;
+            string fullFilePath = Path.Combine(ReportDirectoryPath, fileName);
+
+            if (SaveReportContent(CurrentRequest, fullFilePath))
             {
-                case "Save File":
-                    string fileName = "Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + "." +
-                                      (CurrentRequest.FileFormat ?? "txt").ToLower();
-                    string fullFilePath = Path.Combine(ReportDirectoryPath, fileName);
-
-                    if (SaveReportContent(CurrentRequest, fullFilePath))
-                    {
-                        actionMessage.AppendLine("Success: Report saved as " + CurrentRequest.FileFormat + " to:");
-                        actionMessage.AppendLine(ReportDirectoryPath + "\\" + fileName);
-                    }
-                    else
-                    {
-                        actionMessage.AppendLine("Failure: Could not save the report file (Check folder access: " + ReportDirectoryPath + ").");
-                    }
-                    break;
-
-                case "Print":
-                    actionMessage.AppendLine("Action: Sending report content to the printer queue.");
-                    break;
-
-                case "Display":
-                    actionMessage.AppendLine("Action: Preparing report content for on-screen display.");
-                    break;
+                actionMessage.AppendLine("Success: Report saved as " + format.ToUpper() + " to:");
+                actionMessage.AppendLine(fullFilePath);
+            }
+            else
+            {
+                actionMessage.AppendLine("Failure: Could not save the report file (Check folder access: " + ReportDirectoryPath + ").");
             }
 
             return actionMessage.ToString();
@@ -406,11 +427,13 @@ namespace MPHBSMS
             if (ReportDirectoryPath == null) return false;
             try
             {
-                string content = "Report Generated: " + DateTime.Now.ToString() + "\n" +
-                                 "Time Frame: " + request.StartDate.ToShortDateString() + " to " + request.EndDate.ToShortDateString() + "\n" +
-                                 "Scope: " + request.DataScope + " (Categories: " + string.Join(", ", request.Categories) + ")\n" +
-                                 "Action: Save as " + request.FileFormat;
-                File.WriteAllText(fullPath, content);
+                string content = "REPORT GENERATED ON: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "\n" +
+                                 "PERIOD: " + request.StartDateString + " to " + request.EndDateString + "\n" +
+                                 "DATA SCOPE: " + request.DataScope + "\n" +
+                                 "FORMAT: " + request.FileFormat + "\n" +
+                                 "CATEGORIES: " + string.Join(", ", request.Categories);
+
+                File.WriteAllText(fullPath, content, Encoding.UTF8);
                 return true;
             }
             catch (Exception)
@@ -419,27 +442,24 @@ namespace MPHBSMS
             }
         }
 
-        // =============================================================
-        // PROMPTS
-        // =============================================================
         public string GetCurrentPrompt()
         {
             switch (CurrentState)
             {
                 case ConversationState.AskForPrimaryAction:
-                    return "Do you want to **Generate** or **Open** an existing report?";
+                    return "Do you want to Generate or Open an existing report?";
                 case ConversationState.AskForStartDate:
-                    return "What is the **Start Date** for the report? (e.g., 2025-10-01 or 01/10/2025)";
+                    return "What is the Start Date for the report? (e.g., 2025-10-01 or 01/10/2025)";
                 case ConversationState.AskForStartMonth:
-                    return "Please enter the **Month** number for the start date (1-12).";
+                    return "Please enter the Month number for the start date (1-12).";
                 case ConversationState.AskForStartYear:
-                    return "Please enter the **Year** for the start date (e.g., 2024).";
+                    return "Please enter the Year for the start date (e.g., 2024).";
                 case ConversationState.AskForEndDate:
-                    return "What is the **End Date** for the report? (e.g., 2025-12-31 or 31/12/2025)";
+                    return "What is the End Date for the report? (e.g., 2025-12-31 or 31/12/2025)";
                 case ConversationState.AskForEndMonth:
-                    return "Please enter the **Month** number for the end date (1-12).";
+                    return "Please enter the Month number for the end date (1-12).";
                 case ConversationState.AskForEndYear:
-                    return "Please enter the **Year** for the end date (e.g., 2024).";
+                    return "Please enter the Year for the end date (e.g., 2024).";
                 default:
                     return "Continue with the next step.";
             }
