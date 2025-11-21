@@ -42,6 +42,7 @@
             this.antiNatalWardToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.laborWardToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.accidentAndEmergencyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.overalStatisticsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -54,7 +55,6 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.button5 = new System.Windows.Forms.Button();
-            this.overalStatisticsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
@@ -143,6 +143,13 @@
             this.accidentAndEmergencyToolStripMenuItem.Size = new System.Drawing.Size(153, 20);
             this.accidentAndEmergencyToolStripMenuItem.Text = "Accident And Emergency";
             this.accidentAndEmergencyToolStripMenuItem.Click += new System.EventHandler(this.accidentAndEmergencyToolStripMenuItem_Click);
+            // 
+            // overalStatisticsToolStripMenuItem
+            // 
+            this.overalStatisticsToolStripMenuItem.Name = "overalStatisticsToolStripMenuItem";
+            this.overalStatisticsToolStripMenuItem.Size = new System.Drawing.Size(102, 20);
+            this.overalStatisticsToolStripMenuItem.Text = "Overal Statistics";
+            this.overalStatisticsToolStripMenuItem.Click += new System.EventHandler(this.overalStatisticsToolStripMenuItem_Click);
             // 
             // button1
             // 
@@ -240,6 +247,7 @@
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(148, 21);
             this.comboBox1.TabIndex = 9;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // label1
             // 
@@ -273,13 +281,6 @@
             this.button5.Text = "Reports";
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
-            // 
-            // overalStatisticsToolStripMenuItem
-            // 
-            this.overalStatisticsToolStripMenuItem.Name = "overalStatisticsToolStripMenuItem";
-            this.overalStatisticsToolStripMenuItem.Size = new System.Drawing.Size(102, 20);
-            this.overalStatisticsToolStripMenuItem.Text = "Overal Statistics";
-            this.overalStatisticsToolStripMenuItem.Click += new System.EventHandler(this.overalStatisticsToolStripMenuItem_Click);
             // 
             // Visual
             // 

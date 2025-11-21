@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
 using System.IO;
+using System.Data.OleDb;
 
 
 // Ensure this matches your project's namespace
@@ -16,11 +17,39 @@ namespace MPHBSMS
         public Reports()
         {
             InitializeComponent();
+
         }
 
         // ➡️ 1. INITIALIZATION: Form Load Event
         private void Reports_Load(object sender, EventArgs e)
         {
+            
+            comboBox2.Items.AddRange(new string[]
+    {
+        "Mental Health Unit",
+        "Female Ward",
+        "Paedatric Ward",
+        "Male Ward",
+        "PostNatal Ward",
+        "NeoNatal Ward",
+        "AnteNatal Ward",
+        "Labor Ward",
+        "Accident and Emergence",
+        "ALL"
+    });
+            comboBox2.SelectedIndex = 0; 
+
+            comboBox1.Items.AddRange(new string[]
+    {
+        "Admission",
+        "InterWardTransferIn",
+        "Discharge",
+        "InterWardTransferOut",
+        "Death",
+        "ALL"
+    });
+            comboBox1.SelectedIndex = 0; 
+            
             if (_manager == null)
             {
                 _manager = new ReportManager();
@@ -177,6 +206,100 @@ namespace MPHBSMS
         private void laborWardToolStripMenuItem_Click(object sender, EventArgs e) { /* Menu logic */ }
         private void richTextBox1_TextChanged(object sender, EventArgs e) { /* Empty */ }
 
-       
+        private void button5_Click_1(object sender, EventArgs e)
+        {
+
+// --- NEW: Initialize Database before connection ---
+DatabaseHelper.InitializeDatabase(); 
+
+try
+{
+    // 1. Get Selections
+    string criteria = comboBox1.SelectedItem.ToString();
+    string selectedWard = comboBox2.SelectedItem.ToString(); // Get selected ward from new ComboBox
+
+    // 2. Parse Dates
+    DateTime startDate = Convert.ToDateTime(textBox1.Text).Date; 
+    // Set end date to end of day (23:59:59)
+    DateTime endDate = Convert.ToDateTime(textBox2.Text).Date.AddDays(1).AddSeconds(-1);
+
+    // 3. Dynamic Query Construction
+    string query = "SELECT COUNT(TM.hospitalNumber) AS TotalCount " +
+                   "FROM tblPatientMaster AS PM " +
+                   "INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber ";
+    
+    // Start with a base WHERE clause (1=1 is useful for starting conditional concatenation)
+    string whereClause = "WHERE 1=1 "; 
+
+    // --- Ward and Category Filtering ---
+
+    // Category Filter: Check if a specific category is selected
+    if (criteria.ToUpper() != "ALL")
+    {
+        whereClause += "AND TM.category = ? ";
+    }
+    
+    // Ward Filter: Check if a specific ward is selected
+    if (selectedWard.ToUpper() != "ALL")
+    {
+        whereClause += "AND PM.currentWard = ? ";
+    }
+    
+    // Date Filter (Always included)
+    whereClause += "AND TM.movementDate BETWEEN ? AND ?";
+    
+    query += whereClause;
+
+    // --- 4. Execute Command ---
+    using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+    {
+        using (OleDbCommand cmd = new OleDbCommand(query, con))
+        {
+            // 5. Add Parameters (Order is CRITICAL for OLEDB '?' placeholders)
+            
+            // Category Parameter (1st if criteria is not "ALL")
+            if (criteria.ToUpper() != "ALL")
+            {
+                cmd.Parameters.AddWithValue("@category", criteria);
+            }
+
+            // Ward Parameter (2nd if selectedWard is not "ALL")
+            if (selectedWard.ToUpper() != "ALL")
+            {
+                cmd.Parameters.AddWithValue("@ward", selectedWard);
+            }
+
+            // Date Parameters (Always last)
+            cmd.Parameters.AddWithValue("@startDate", startDate);
+            cmd.Parameters.AddWithValue("@endDate", endDate);
+
+
+            // Reset all dashboard labels to "00"
+            label5.Text = "00";
+            label6.Text = "00";
+            label7.Text = "00";
+            label8.Text = "00";
+            label9.Text = "00";
+
+            // Open Connection
+            con.Open();
+            
+            // Execute Scalar returns the single value (the count)
+            object result = cmd.ExecuteScalar();
+            int totalCount = result != DBNull.Value ? Convert.ToInt32(result) : 0;
+            string countText = totalCount.ToString("D2");
+            
+            // Assuming label5 is the main result display for a single-selection filter.
+            label5.Text = countText;
+        } // cmd is automatically Disposed
+    } // con is automatically Closed and Disposed
+}
+catch (Exception error)
+{
+    // Error handling remains
+    MessageBox.Show("Error occured\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+// The finally block is now unnecessary as the 'using' statement handles connection disposal automatically.
+        }
     }
 }
