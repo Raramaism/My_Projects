@@ -35,8 +35,7 @@ namespace MPHBSMS
         "NeoNatal Ward",
         "AnteNatal Ward",
         "Labor Ward",
-        "Accident and Emergence",
-        "ALL"
+        "Accident and Emergence"
     });
             comboBox2.SelectedIndex = 0;
 
@@ -46,8 +45,7 @@ namespace MPHBSMS
         "InterWardTransferIn",
         "Discharge",
         "InterWardTransferOut",
-        "Death",
-        "ALL"
+        "Death"
     });
             comboBox1.SelectedIndex = 0;
 
@@ -211,390 +209,203 @@ namespace MPHBSMS
         {
             // --- NEW: Initialize Database before connection ---
             DatabaseHelper.InitializeDatabase();
-            /*
-            try
-            {
-                // 1. Get Selections (Ward only, we will ignore Category dropdown for the summary labels)
-                string selectedWard = "ALL";
-                if (comboBox2.SelectedItem != null)
-                {
-                    var tmp = comboBox2.SelectedItem.ToString().Trim();
-                    if (!string.IsNullOrEmpty(tmp)) selectedWard = tmp;
-                }
-
-                // 2. Validate input
-                if (string.IsNullOrWhiteSpace(textBox1.Text) ||
-                    string.IsNullOrWhiteSpace(textBox2.Text))
-                {
-                    MessageBox.Show("Please enter both a valid Start Date and End Date.",
-                                    "Marondera Provincial Hospital",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // 3. Parse Dates
-                DateTime startDate;
-                if (!DateTime.TryParse(textBox1.Text.Trim(), out startDate))
-                {
-                    MessageBox.Show("Start Date is not a valid date.",
-                                    "Marondera Provincial Hospital",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning);
-                    return;
-                }
-
-                DateTime endDate;
-                if (!DateTime.TryParse(textBox2.Text.Trim(), out endDate))
-                {
-                    MessageBox.Show("End Date is not a valid date.",
-                                    "Marondera Provincial Hospital",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning);
-                    return;
-                }
-
-                startDate = startDate.Date;
-                DateTime exclusiveEndDate = endDate.Date.AddDays(1);
-
-                // 4. Define the categories to count and their target labels
-                // KEY = Database Value, VALUE = Label to update
-                // CHECK SPELLING: Ensure the Keys match your database 'category' column exactly!
-                var categories = new Dictionary<string, Label>
-    {
-        { "Admission", label5 },
-        { "InterWardTransferIn", label6 },
-        { "Discharge", label7 },
-        { "InterWardTransferOut", label8 },
-        { "Death", label9 }
-    };
-
-                // 5. Execute Loop
-                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
-                {
-                    con.Open();
-
-                    foreach (var kvp in categories)
-                    {
-                        string categoryToCount = kvp.Key;
-                        Label targetLabel = kvp.Value;
-
-                        // Build Query
-                        string query =
-                            @"SELECT COUNT(*) 
-                  FROM ( 
-                      SELECT DISTINCT TM.hospitalNumber 
-                      FROM tblPatientMaster AS PM 
-                      INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber ";
-
-                        string whereClause = "WHERE 1=1 ";
-
-                        // 1. Filter by the specific category for this label
-                        whereClause += "AND TM.category = ? ";
-
-                        // 2. Filter by Ward (if selected)
-                        bool useWard = !string.Equals(selectedWard, "ALL", StringComparison.OrdinalIgnoreCase);
-                        if (useWard)
-                            whereClause += "AND PM.currentWard = ? ";
-
-                        // 3. Filter by Date
-                        whereClause += "AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ? ";
-
-                        query += whereClause + ") AS T";
-
-                        using (OleDbCommand cmd = new OleDbCommand(query, con))
-                        {
-                            // Parameters must be added in the exact order they appear in the query (?)
-
-                            // 1. Category Parameter
-                            cmd.Parameters.AddWithValue("?", categoryToCount);
-
-                            // 2. Ward Parameter
-                            if (useWard)
-                                cmd.Parameters.AddWithValue("?", selectedWard);
-
-                            // 3. Date Parameters
-                            cmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
-                            cmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
-
-                            // Execute
-                            object result = cmd.ExecuteScalar();
-                            int totalCount = 0;
-
-                            if (result != null && result != DBNull.Value)
-                                totalCount = Convert.ToInt32(result);
-
-                            // Update the specific label
-                            targetLabel.Text = totalCount.ToString("D2");
-                        }
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                MessageBox.Show("Error occurred\n" + error.Message,
-                                "Marondera Provincial Hospital",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Error);
-            }*/
-    /*    try
-{
-    // ============================
-    // LOG FILE PATH
-    // ============================
-    string logPath = @"C:\MPH_Logs\QueryLog.txt";
-
-    // Ensure folder exists
-    if (!Directory.Exists(@"C:\MPH_Logs"))
-        Directory.CreateDirectory(@"C:\MPH_Logs");
-
-
-    // 1. Get Selections (null-safe)
-    string criteria = "ALL";
-    if (comboBox1.SelectedItem != null)
-    {
-        var tmp = comboBox1.SelectedItem.ToString().Trim();
-        if (!string.IsNullOrEmpty(tmp)) criteria = tmp;
-    }
-
-    string selectedWard = "ALL";
-    if (comboBox2.SelectedItem != null)
-    {
-        var tmp = comboBox2.SelectedItem.ToString().Trim();
-        if (!string.IsNullOrEmpty(tmp)) selectedWard = tmp;
-    }
-
-    // 2. Validate input
-    if (string.IsNullOrWhiteSpace(textBox1.Text) ||
-        string.IsNullOrWhiteSpace(textBox2.Text))
-    {
-        MessageBox.Show("Please enter both a valid Start Date and End Date.",
-                        "Marondera Provincial Hospital",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-        return;
-    }
-
-    // 3. Parse Dates
-    DateTime startDate;
-    if (!DateTime.TryParse(textBox1.Text.Trim(), out startDate))
-    {
-        MessageBox.Show("Start Date is not a valid date.",
-                        "Marondera Provincial Hospital",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-        return;
-    }
-
-    DateTime endDate;
-    if (!DateTime.TryParse(textBox2.Text.Trim(), out endDate))
-    {
-        MessageBox.Show("End Date is not a valid date.",
-                        "Marondera Provincial Hospital",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-        return;
-    }
-
-    startDate = startDate.Date;
-    DateTime exclusiveEndDate = endDate.Date.AddDays(1);
-
-    // 4. Build Query (WITH DISTINCT)
-    string query = @"SELECT COUNT(HospitalID) AS TotalCount 
-        FROM (
-                SELECT DISTINCT TM.hospitalNumber AS HospitalID
-                FROM tblPatientMaster AS PM
-                INNER JOIN tblPatientMovement AS TM
-                ON PM.hospitalNumber = TM.hospitalNumber )";
-
-    
             
-    string whereClause = "WHERE 1=1 ";
+            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            {
+                con.Open();
+                try
+                {
+                    // 3. Parse Dates
+                    DateTime startDate;
+                    if (!DateTime.TryParse(textBox1.Text.Trim(), out startDate))
+                    {
+                        MessageBox.Show("Start Date is not a valid date.",
+                                        "Marondera Provincial Hospital",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Warning);
+                        return;
+                    }
 
-    bool useCategory = !string.Equals(criteria, "ALL", StringComparison.OrdinalIgnoreCase);
-    bool useWard = !string.Equals(selectedWard, "ALL", StringComparison.OrdinalIgnoreCase);
+                    DateTime endDate;
+                    if (!DateTime.TryParse(textBox2.Text.Trim(), out endDate))
+                    {
+                        MessageBox.Show("End Date is not a valid date.",
+                                        "Marondera Provincial Hospital",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Warning);
+                        return;
+                    }
 
-    if (useCategory)
-        whereClause += "AND TM.category = ? ";
+                    startDate = startDate.Date;
+                    DateTime exclusiveEndDate = endDate.Date.AddDays(1);
+                    string category = comboBox1.SelectedItem.ToString();
+                    string selectedWard = comboBox2.SelectedItem.ToString();
 
-    if (useWard)
-        whereClause += "AND PM.currentWard = ? ";
+                    //Admissions only
+                    if (category == "Admission")
+                    {
+                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
+                               FROM (
+                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
+                                   FROM tblPatientMaster AS PM 
+                                   INNER JOIN tblPatientMovement AS TM 
+                                   ON PM.hospitalNumber = TM.hospitalNumber 
+                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND PM.admissionDateTime >= ? AND PM.admissionDateTime < ?
+                               )";
 
-    // CORRECT date column
-    whereClause += "AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ? ";
 
-    query += whereClause;
 
-    // 5. Execute SQL
-    using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
-    using (OleDbCommand cmd = new OleDbCommand(query, con))
-    {
-        // Order must match '?' sequence
-        if (useCategory)
-            cmd.Parameters.AddWithValue("?", criteria);
+                        using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                        {
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
 
-        if (useWard)
-            cmd.Parameters.AddWithValue("?", selectedWard);
+                            int count = (int)wardAdmissionsCmd.ExecuteScalar();
 
-        cmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
-        cmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
+                                label5.Text = count.ToString();
+                          }
+                    }
 
-        // ============================
-        // LOG SQL + PARAMETERS
-        // ============================
-        using (StreamWriter sw = new StreamWriter(logPath, true))
+                    //Inter Ward Transfer In only
+                    else if (category == "InterWardTransferIn")
+                    {
+                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
+                               FROM (
+                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
+                                   FROM tblPatientMaster AS PM 
+                                   INNER JOIN tblPatientMovement AS TM 
+                                   ON PM.hospitalNumber = TM.hospitalNumber 
+                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ?
+                               )";
+
+
+
+                        using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                        {
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
+
+                            int count = (int)wardAdmissionsCmd.ExecuteScalar();
+
+                                label6.Text = count.ToString();
+                            }
+                    }
+
+                    //Disharges only
+                    else if (category == "Discharge")
+                    {
+                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
+                               FROM (
+                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
+                                   FROM tblPatientMaster AS PM 
+                                   INNER JOIN tblPatientMovement AS TM 
+                                   ON PM.hospitalNumber = TM.hospitalNumber 
+                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND PM.dischargeDateTime >= ? AND PM.dischargeDateTime < ?
+                               )";
+
+
+
+                        using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                        {
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
+
+                            int count = (int)wardAdmissionsCmd.ExecuteScalar();
+
+                                label7.Text = count.ToString();
+                          }
+                    }
+
+                    //Inter Ward Transfer Out only
+                    else if (category == "InterWardTransferOut")
+                    {
+                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
+                               FROM (
+                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
+                                   FROM tblPatientMaster AS PM 
+                                   INNER JOIN tblPatientMovement AS TM 
+                                   ON PM.hospitalNumber = TM.hospitalNumber 
+                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ?
+                               )";
+
+
+
+                        using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                        {
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
+
+                            int count = (int)wardAdmissionsCmd.ExecuteScalar();
+
+                                label8.Text = count.ToString();
+                             }
+                    }
+
+                    //Deaths only
+                    else if (category == "Death")
+                    {
+                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
+                               FROM (
+                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
+                                   FROM tblPatientMaster AS PM 
+                                   INNER JOIN tblPatientMovement AS TM 
+                                   ON PM.hospitalNumber = TM.hospitalNumber 
+                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND PM.dischargeDateTime >= ? AND PM.dischargeDateTime < ?
+                               )";
+
+
+
+                        using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
+                        {
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", category);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.AddWithValue("?", selectedWard);
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
+                            wardAdmissionsCmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
+
+                            int count = (int)wardAdmissionsCmd.ExecuteScalar();
+
+                                label9.Text = count.ToString();
+                       
+                    }
+                   
+                    }
+                   
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Error occurred\n" + error.Message,
+                                    "Marondera Provincial Hospital",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    con.Close();
+                }
+               }
+            }
+        
+
+        private void button6_Click(object sender, EventArgs e)
         {
-            sw.WriteLine("======================================================");
-            sw.WriteLine("DATE: " + DateTime.Now);
-            sw.WriteLine("EXECUTED QUERY:");
-            sw.WriteLine(query);
-            sw.WriteLine("\nParameters:");
-
-            foreach (OleDbParameter p in cmd.Parameters)
-                sw.WriteLine(" - " + p.Value);
-
-            sw.WriteLine("======================================================\n");
-        }
-
-        // Reset UI values
-        label5.Text = "00";
-
-        con.Open();
-
-        object result = cmd.ExecuteScalar();
-        int totalCount = 0;
-
-        if (result != null && result != DBNull.Value)
-            totalCount = Convert.ToInt32(result);
-
-        label5.Text = totalCount.ToString("D2");
-    }
-}
-catch (Exception error)
-{
-    MessageBox.Show("Error occurred\n" + error.Message,
-                    "Marondera Provincial Hospital",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-}*/
-
-            try
-            {
-                // 1. Get Selections (null-safe)
-                string criteria = "ALL";
-                if (comboBox1.SelectedItem != null)
-                {
-                    var tmp = comboBox1.SelectedItem.ToString().Trim();
-                    if (!string.IsNullOrEmpty(tmp)) criteria = tmp;
-                }
-
-                string selectedWard = "ALL";
-                if (comboBox2.SelectedItem != null)
-                {
-                    var tmp = comboBox2.SelectedItem.ToString().Trim();
-                    if (!string.IsNullOrEmpty(tmp)) selectedWard = tmp;
-                }
-
-                // 2. Validate input
-                if (string.IsNullOrWhiteSpace(textBox1.Text) ||
-                    string.IsNullOrWhiteSpace(textBox2.Text))
-                {
-                    MessageBox.Show("Please enter both a valid Start Date and End Date.",
-                                    "Marondera Provincial Hospital",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // 3. Parse Dates
-                DateTime startDate;
-                if (!DateTime.TryParse(textBox1.Text.Trim(), out startDate))
-                {
-                    MessageBox.Show("Start Date is not a valid date.",
-                                    "Marondera Provincial Hospital",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning);
-                    return;
-                }
-
-                DateTime endDate;
-                if (!DateTime.TryParse(textBox2.Text.Trim(), out endDate))
-                {
-                    MessageBox.Show("End Date is not a valid date.",
-                                    "Marondera Provincial Hospital",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning);
-                    return;
-                }
-
-                startDate = startDate.Date;
-                DateTime exclusiveEndDate = endDate.Date.AddDays(1);
-
-                // 4. Build Query (CORRECTED STRUCTURE)
-                // We open the subquery, but we DO NOT close it with ')' yet.
-                string query =
-                    @"SELECT COUNT(*) AS TotalCount 
-          FROM ( 
-              SELECT DISTINCT TM.hospitalNumber 
-              FROM tblPatientMaster AS PM 
-              INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber ";
-
-                // We start the WHERE clause inside the subquery
-                string whereClause = "WHERE 1=1 ";
-
-                bool useCategory = !string.Equals(criteria, "ALL", StringComparison.OrdinalIgnoreCase);
-                bool useWard = !string.Equals(selectedWard, "ALL", StringComparison.OrdinalIgnoreCase);
-
-                if (useCategory)
-                    whereClause += "AND TM.category = ? ";
-
-                if (useWard)
-                    whereClause += "AND PM.currentWard = ? ";
-
-                // Date filtering on the Movement table
-                whereClause += "AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ? ";
-
-                // Combine the parts
-                query += whereClause;
-
-                // NOW we close the subquery parentheses and give it an alias [T]
-                query += ") AS T";
-
-                // 5. Execute SQL
-                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
-                using (OleDbCommand cmd = new OleDbCommand(query, con))
-                {
-                    // Must match '?' order exactly
-                    if (useCategory)
-                        cmd.Parameters.AddWithValue("?", criteria);
-
-                    if (useWard)
-                        cmd.Parameters.AddWithValue("?", selectedWard);
-
-                    // Access/OleDb cares strictly about the order of parameters
-                    cmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = startDate });
-                    cmd.Parameters.Add(new OleDbParameter("?", OleDbType.Date) { Value = exclusiveEndDate });
-
-                    label5.Text = "00"; // reset labels
-
-                    con.Open();
-
-                    object result = cmd.ExecuteScalar();
-                    int totalCount = 0;
-
-                    if (result != null && result != DBNull.Value)
-                        totalCount = Convert.ToInt32(result);
-
-                    label5.Text = totalCount.ToString("D2");
-                }
-            }
-            catch (Exception error)
-            {
-                MessageBox.Show("Error occurred\n" + error.Message,
-                                "Marondera Provincial Hospital",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Error);
-            }
+            label5.Text = "00";
+            label6.Text = "00";
+            label7.Text = "00";
+            label8.Text = "00";
+            label9.Text = "00";
         }
     }
 }
