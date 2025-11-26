@@ -407,5 +407,10 @@ namespace MPHBSMS
             label8.Text = "00";
             label9.Text = "00";
         }
+
+        private void label12_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

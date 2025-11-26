@@ -101,6 +101,18 @@ namespace MPHBSMS
         private void button3_Click(object sender, EventArgs e)
         {
 
+            try
+            {
+                Form1 Obj = new Form1();
+                this.Close();
+                Obj.Show();
+            }
+
+            catch (Exception error)
+            {
+
+                DialogResult = MessageBox.Show("ERROR!!\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+            }
         }
     }
 }

@@ -176,10 +176,10 @@
             // 
             this.button1.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button1.Location = new System.Drawing.Point(232, 512);
+            this.button1.Location = new System.Drawing.Point(285, 528);
             this.button1.Margin = new System.Windows.Forms.Padding(5);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(262, 49);
+            this.button1.Size = new System.Drawing.Size(161, 36);
             this.button1.TabIndex = 2;
             this.button1.Text = "Create Account";
             this.button1.UseVisualStyleBackColor = true;
@@ -189,10 +189,10 @@
             // 
             this.button2.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button2.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button2.Location = new System.Drawing.Point(566, 512);
+            this.button2.Location = new System.Drawing.Point(583, 528);
             this.button2.Margin = new System.Windows.Forms.Padding(5);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(203, 49);
+            this.button2.Size = new System.Drawing.Size(121, 36);
             this.button2.TabIndex = 2;
             this.button2.Text = "Clear Text ";
             this.button2.UseVisualStyleBackColor = true;
@@ -202,10 +202,10 @@
             // 
             this.button3.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button3.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button3.Location = new System.Drawing.Point(854, 512);
+            this.button3.Location = new System.Drawing.Point(856, 528);
             this.button3.Margin = new System.Windows.Forms.Padding(5);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(215, 49);
+            this.button3.Size = new System.Drawing.Size(133, 36);
             this.button3.TabIndex = 2;
             this.button3.Text = "Previous Page";
             this.button3.UseVisualStyleBackColor = true;
