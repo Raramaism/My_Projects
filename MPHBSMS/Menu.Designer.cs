@@ -99,7 +99,7 @@
             this.button1.Location = new System.Drawing.Point(93, 626);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(85, 34);
-            this.button1.TabIndex = 1;
+            this.button1.TabIndex = 15;
             this.button1.Text = "Insert";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
@@ -121,7 +121,7 @@
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
             this.menuStrip1.Size = new System.Drawing.Size(1350, 24);
-            this.menuStrip1.TabIndex = 2;
+            this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             this.menuStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.menuStrip1_ItemClicked);
             // 
@@ -196,7 +196,7 @@
             this.radioButton1.Location = new System.Drawing.Point(678, 106);
             this.radioButton1.Name = "radioButton1";
             this.radioButton1.Size = new System.Drawing.Size(84, 24);
-            this.radioButton1.TabIndex = 3;
+            this.radioButton1.TabIndex = 7;
             this.radioButton1.TabStop = true;
             this.radioButton1.Text = "Female";
             this.radioButton1.UseVisualStyleBackColor = true;
@@ -209,7 +209,7 @@
             this.checkBox1.Location = new System.Drawing.Point(839, 101);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(110, 24);
-            this.checkBox1.TabIndex = 4;
+            this.checkBox1.TabIndex = 9;
             this.checkBox1.Text = "Admission";
             this.checkBox1.UseVisualStyleBackColor = true;
             this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
@@ -288,7 +288,7 @@
             this.textBox1.Location = new System.Drawing.Point(273, 56);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(275, 26);
-            this.textBox1.TabIndex = 6;
+            this.textBox1.TabIndex = 1;
             // 
             // textBox2
             // 
@@ -296,7 +296,7 @@
             this.textBox2.Location = new System.Drawing.Point(273, 100);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(275, 26);
-            this.textBox2.TabIndex = 6;
+            this.textBox2.TabIndex = 2;
             // 
             // textBox3
             // 
@@ -304,7 +304,7 @@
             this.textBox3.Location = new System.Drawing.Point(273, 151);
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(275, 26);
-            this.textBox3.TabIndex = 6;
+            this.textBox3.TabIndex = 3;
             // 
             // radioButton2
             // 
@@ -314,7 +314,7 @@
             this.radioButton2.Location = new System.Drawing.Point(578, 106);
             this.radioButton2.Name = "radioButton2";
             this.radioButton2.Size = new System.Drawing.Size(65, 24);
-            this.radioButton2.TabIndex = 3;
+            this.radioButton2.TabIndex = 6;
             this.radioButton2.TabStop = true;
             this.radioButton2.Text = "Male";
             this.radioButton2.UseVisualStyleBackColor = true;
@@ -327,7 +327,7 @@
             this.checkBox2.Location = new System.Drawing.Point(842, 141);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(114, 24);
-            this.checkBox2.TabIndex = 4;
+            this.checkBox2.TabIndex = 10;
             this.checkBox2.Text = "Transfer In";
             this.checkBox2.UseVisualStyleBackColor = true;
             this.checkBox2.CheckedChanged += new System.EventHandler(this.checkBox2_CheckedChanged);
@@ -340,7 +340,7 @@
             this.checkBox3.Location = new System.Drawing.Point(842, 188);
             this.checkBox3.Name = "checkBox3";
             this.checkBox3.Size = new System.Drawing.Size(107, 24);
-            this.checkBox3.TabIndex = 4;
+            this.checkBox3.TabIndex = 11;
             this.checkBox3.Text = "Discharge";
             this.checkBox3.UseVisualStyleBackColor = true;
             this.checkBox3.CheckedChanged += new System.EventHandler(this.checkBox3_CheckedChanged);
@@ -353,7 +353,7 @@
             this.checkBox4.Location = new System.Drawing.Point(842, 225);
             this.checkBox4.Name = "checkBox4";
             this.checkBox4.Size = new System.Drawing.Size(124, 24);
-            this.checkBox4.TabIndex = 4;
+            this.checkBox4.TabIndex = 12;
             this.checkBox4.Text = "Transfer out";
             this.checkBox4.UseVisualStyleBackColor = true;
             this.checkBox4.CheckedChanged += new System.EventHandler(this.checkBox4_CheckedChanged);
@@ -366,7 +366,7 @@
             this.checkBox5.Location = new System.Drawing.Point(842, 264);
             this.checkBox5.Name = "checkBox5";
             this.checkBox5.Size = new System.Drawing.Size(76, 24);
-            this.checkBox5.TabIndex = 4;
+            this.checkBox5.TabIndex = 13;
             this.checkBox5.Text = "Death";
             this.checkBox5.UseVisualStyleBackColor = true;
             this.checkBox5.CheckedChanged += new System.EventHandler(this.checkBox5_CheckedChanged);
@@ -547,7 +547,7 @@
             this.checkBox6.Location = new System.Drawing.Point(1258, 392);
             this.checkBox6.Name = "checkBox6";
             this.checkBox6.Size = new System.Drawing.Size(52, 17);
-            this.checkBox6.TabIndex = 4;
+            this.checkBox6.TabIndex = 14;
             this.checkBox6.Text = "Done";
             this.checkBox6.UseVisualStyleBackColor = true;
             this.checkBox6.CheckedChanged += new System.EventHandler(this.checkBox6_CheckedChanged);
@@ -558,7 +558,7 @@
             this.dateTimePicker1.Location = new System.Drawing.Point(701, 328);
             this.dateTimePicker1.Name = "dateTimePicker1";
             this.dateTimePicker1.Size = new System.Drawing.Size(193, 26);
-            this.dateTimePicker1.TabIndex = 9;
+            this.dateTimePicker1.TabIndex = 8;
             // 
             // listBox1
             // 
@@ -568,7 +568,7 @@
             this.listBox1.Location = new System.Drawing.Point(273, 205);
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(275, 175);
-            this.listBox1.TabIndex = 10;
+            this.listBox1.TabIndex = 4;
             this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged);
             // 
             // button2
@@ -577,7 +577,7 @@
             this.button2.Location = new System.Drawing.Point(197, 628);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(85, 31);
-            this.button2.TabIndex = 11;
+            this.button2.TabIndex = 16;
             this.button2.Text = "visuals";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
@@ -588,7 +588,7 @@
             this.button3.Location = new System.Drawing.Point(432, 628);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(85, 31);
-            this.button3.TabIndex = 12;
+            this.button3.TabIndex = 18;
             this.button3.Text = "Home";
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
@@ -601,7 +601,7 @@
             this.listBox2.Location = new System.Drawing.Point(273, 415);
             this.listBox2.Name = "listBox2";
             this.listBox2.Size = new System.Drawing.Size(275, 194);
-            this.listBox2.TabIndex = 13;
+            this.listBox2.TabIndex = 5;
             this.listBox2.SelectedIndexChanged += new System.EventHandler(this.listBox2_SelectedIndexChanged);
             // 
             // button4
@@ -610,7 +610,7 @@
             this.button4.Location = new System.Drawing.Point(320, 628);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(75, 31);
-            this.button4.TabIndex = 14;
+            this.button4.TabIndex = 17;
             this.button4.Text = "Reports";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);

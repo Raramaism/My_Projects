@@ -26,27 +26,27 @@ namespace MPHBSMS
         {
 
             comboBox2.Items.AddRange(new string[]
-    {
-        "Mental Health Unit",
-        "Female Ward",
-        "Paedatric Ward",
-        "Male Ward",
-        "PostNatal Ward",
-        "NeoNatal Ward",
-        "AnteNatal Ward",
-        "Labor Ward",
-        "Accident and Emergence"
-    });
+    {
+        "Mental Health Unit",
+        "Female Ward",
+        "Paedatric Ward",
+        "Male Ward",
+        "PostNatal Ward",
+        "NeoNatal Ward",
+        "AnteNatal Ward",
+        "Labor Ward",
+        "Accident and Emergence"
+    });
             comboBox2.SelectedIndex = 0;
 
             comboBox1.Items.AddRange(new string[]
-    {
-        "Admission",
-        "InterWardTransferIn",
-        "Discharge",
-        "InterWardTransferOut",
-        "Death"
-    });
+    {
+        "Admission",
+        "InterWardTransferIn",
+        "Discharge",
+        "InterWardTransferOut",
+        "Death"
+    });
             comboBox1.SelectedIndex = 0;
 
             if (_manager == null)
@@ -58,7 +58,7 @@ namespace MPHBSMS
             UpdateUI(initialCall: true);
 
             // Set the state immediately to prevent the first prompt from being processed as input
-            _manager.CurrentState = ConversationState.AskForPrimaryAction;
+            _manager.CurrentState = ReportManager.ConversationState.AskForPrimaryAction; // FIX 1
 
             // Focus the richTextBox so the user can start typing right away
             richTextBox1.Focus();
@@ -86,7 +86,7 @@ namespace MPHBSMS
                 ChatLogger.AppendText(richTextBox1, "You: " + userInput, Color.White, true);
 
                 // 3. Call the manager to process the command
-                ProcessResult result = _manager.ProcessAndAdvance(userInput);
+                ReportManager.ProcessResult result = _manager.ProcessAndAdvance(userInput); // FIX 5
 
                 if (!result.Success)
                 {
@@ -123,7 +123,7 @@ namespace MPHBSMS
         // 💡 5. CORE UI UPDATER
         private void UpdateUI(bool initialCall = false)
         {
-            if (_manager.CurrentState == ConversationState.ConfirmationAndGenerate)
+            if (_manager.CurrentState == ReportManager.ConversationState.ConfirmationAndGenerate) // FIX 2
             {
                 string finalLog = _manager.ExecuteReportLogic();
 
@@ -131,7 +131,7 @@ namespace MPHBSMS
                 ChatLogger.AppendText(richTextBox1, finalLog, Color.White, false);
                 ChatLogger.AppendText(richTextBox1, "------------------------\n", Color.Gray, true);
 
-                _manager.CurrentState = ConversationState.Complete;
+                _manager.CurrentState = ReportManager.ConversationState.Complete; // FIX 3
 
                 UpdateUI();
                 return;
@@ -139,14 +139,14 @@ namespace MPHBSMS
 
             string prompt = _manager.GetCurrentPrompt();
 
-            if (_manager.CurrentState != ConversationState.Greeting)
+            if (_manager.CurrentState != ReportManager.ConversationState.Greeting) // FIX 4
             {
                 // Bot prompt (Color: White, Prefix: MPH Bot)
                 ChatLogger.AppendText(richTextBox1, "MPH Bot: " + prompt, Color.White, false);
             }
         }
 
-        // 💡 6. INITIAL GREETING 
+        // 💡 6. INITIAL GREETING 
         private void DisplayBotGreeting()
         {
             string greeting = "Welcome to the Report Generator! I'm here to guide you through creating or opening a report.";
@@ -209,7 +209,7 @@ namespace MPHBSMS
         {
             // --- NEW: Initialize Database before connection ---
             DatabaseHelper.InitializeDatabase();
-            
+
             using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
             {
                 con.Open();
@@ -244,14 +244,21 @@ namespace MPHBSMS
                     //Admissions only
                     if (category == "Admission")
                     {
-                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
-                               FROM (
-                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
-                                   FROM tblPatientMaster AS PM 
-                                   INNER JOIN tblPatientMovement AS TM 
-                                   ON PM.hospitalNumber = TM.hospitalNumber 
-                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND PM.admissionDateTime >= ? AND PM.admissionDateTime < ?
-                               )";
+
+                        string wardAdmissionsQuery = @"
+SELECT COUNT(HospitalID) AS TotalAdmissions
+FROM 
+(
+    SELECT DISTINCT TM.hospitalNumber AS HospitalID
+    FROM tblPatientMaster AS PM
+    INNER JOIN tblPatientMovement AS TM
+        ON PM.hospitalNumber = TM.hospitalNumber
+    WHERE TM.category = ? 
+      AND PM.currentWard = ? 
+      AND TM.ToWard = ? 
+      AND PM.dischargeDate >= ? 
+      AND PM.dischargeDate < ?
+) AS Q";   
 
 
 
@@ -265,22 +272,27 @@ namespace MPHBSMS
 
                             int count = (int)wardAdmissionsCmd.ExecuteScalar();
 
-                                label5.Text = count.ToString();
-                          }
+                            label5.Text = count.ToString();
+                        }
                     }
 
                     //Inter Ward Transfer In only
                     else if (category == "InterWardTransferIn")
                     {
-                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
-                               FROM (
-                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
-                                   FROM tblPatientMaster AS PM 
-                                   INNER JOIN tblPatientMovement AS TM 
-                                   ON PM.hospitalNumber = TM.hospitalNumber 
-                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ?
-                               )";
-
+                        string wardAdmissionsQuery = @"
+SELECT COUNT(HospitalID) AS TotalAdmissions
+FROM 
+(
+    SELECT DISTINCT TM.hospitalNumber AS HospitalID
+    FROM tblPatientMaster AS PM
+    INNER JOIN tblPatientMovement AS TM
+        ON PM.hospitalNumber = TM.hospitalNumber
+    WHERE TM.category = ? 
+      AND PM.currentWard = ? 
+      AND TM.ToWard = ? 
+      AND TM.MovementDateTime >= ? 
+      AND TM.MovementDateTime < ?
+) AS Q";   
 
 
                         using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
@@ -293,21 +305,29 @@ namespace MPHBSMS
 
                             int count = (int)wardAdmissionsCmd.ExecuteScalar();
 
-                                label6.Text = count.ToString();
-                            }
+                            label6.Text = count.ToString();
+                        }
                     }
 
                     //Disharges only
                     else if (category == "Discharge")
                     {
-                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
-                               FROM (
-                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
-                                   FROM tblPatientMaster AS PM 
-                                   INNER JOIN tblPatientMovement AS TM 
-                                   ON PM.hospitalNumber = TM.hospitalNumber 
-                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND PM.dischargeDateTime >= ? AND PM.dischargeDateTime < ?
-                               )";
+                        
+                        string wardAdmissionsQuery = @"
+SELECT COUNT(HospitalID) AS TotalAdmissions
+FROM 
+(
+    SELECT DISTINCT TM.hospitalNumber AS HospitalID
+    FROM tblPatientMaster AS PM
+    INNER JOIN tblPatientMovement AS TM
+        ON PM.hospitalNumber = TM.hospitalNumber
+    WHERE TM.category = ? 
+      AND PM.currentWard = ? 
+      AND TM.ToWard = ? 
+      AND PM.dischargeDate >= ? 
+      AND PM.dischargeDate < ?
+) AS Q";   
+
 
 
 
@@ -321,22 +341,28 @@ namespace MPHBSMS
 
                             int count = (int)wardAdmissionsCmd.ExecuteScalar();
 
-                                label7.Text = count.ToString();
-                          }
+                            label7.Text = count.ToString();
+                        }
                     }
 
                     //Inter Ward Transfer Out only
                     else if (category == "InterWardTransferOut")
                     {
-                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
-                               FROM (
-                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
-                                   FROM tblPatientMaster AS PM 
-                                   INNER JOIN tblPatientMovement AS TM 
-                                   ON PM.hospitalNumber = TM.hospitalNumber 
-                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND TM.MovementDateTime >= ? AND TM.MovementDateTime < ?
-                               )";
-
+                        
+                        string wardAdmissionsQuery = @"
+SELECT COUNT(HospitalID) AS TotalAdmissions
+FROM 
+(
+    SELECT DISTINCT TM.hospitalNumber AS HospitalID
+    FROM tblPatientMaster AS PM
+    INNER JOIN tblPatientMovement AS TM
+        ON PM.hospitalNumber = TM.hospitalNumber
+    WHERE TM.category = ? 
+      AND PM.currentWard = ? 
+      AND TM.ToWard = ? 
+      AND TM.MovementDateTime >= ? 
+      AND TM.MovementDateTime < ?
+) AS Q";   
 
 
                         using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
@@ -349,22 +375,29 @@ namespace MPHBSMS
 
                             int count = (int)wardAdmissionsCmd.ExecuteScalar();
 
-                                label8.Text = count.ToString();
-                             }
+                            label8.Text = count.ToString();
+                        }
                     }
 
                     //Deaths only
                     else if (category == "Death")
                     {
-                        string wardAdmissionsQuery = @"SELECT COUNT(HospitalID) AS TotalAdmissions 
-                               FROM (
-                                   SELECT DISTINCT TM.hospitalNumber AS HospitalID 
-                                   FROM tblPatientMaster AS PM 
-                                   INNER JOIN tblPatientMovement AS TM 
-                                   ON PM.hospitalNumber = TM.hospitalNumber 
-                                   WHERE TM.category = ? AND PM.currentWard = ? AND TM.ToWard = ? AND PM.dischargeDateTime >= ? AND PM.dischargeDateTime < ?
-                               )";
+                        
 
+                        string wardAdmissionsQuery = @"
+SELECT COUNT(HospitalID) AS TotalAdmissions
+FROM 
+(
+    SELECT DISTINCT TM.hospitalNumber AS HospitalID
+    FROM tblPatientMaster AS PM
+    INNER JOIN tblPatientMovement AS TM
+        ON PM.hospitalNumber = TM.hospitalNumber
+    WHERE TM.category = ? 
+      AND PM.currentWard = ? 
+      AND TM.ToWard = ? 
+      AND PM.dischargeDate >= ? 
+      AND PM.dischargeDate < ?
+) AS Q";   
 
 
                         using (OleDbCommand wardAdmissionsCmd = new OleDbCommand(wardAdmissionsQuery, con))
@@ -377,12 +410,12 @@ namespace MPHBSMS
 
                             int count = (int)wardAdmissionsCmd.ExecuteScalar();
 
-                                label9.Text = count.ToString();
-                       
+                            label9.Text = count.ToString();
+
+                        }
+
                     }
-                   
-                    }
-                   
+
                 }
                 catch (Exception error)
                 {
@@ -395,9 +428,9 @@ namespace MPHBSMS
                 {
                     con.Close();
                 }
-               }
             }
-        
+        }
+
 
         private void button6_Click(object sender, EventArgs e)
         {

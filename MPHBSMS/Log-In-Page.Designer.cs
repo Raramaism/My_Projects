@@ -56,7 +56,7 @@
             this.button1.Location = new System.Drawing.Point(196, 239);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(103, 32);
-            this.button1.TabIndex = 1;
+            this.button1.TabIndex = 2;
             this.button1.Text = "Enter";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
@@ -92,7 +92,7 @@
             this.button2.Location = new System.Drawing.Point(305, 239);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(94, 32);
-            this.button2.TabIndex = 1;
+            this.button2.TabIndex = 3;
             this.button2.Text = "Clear Text";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
@@ -104,7 +104,7 @@
             this.button3.Location = new System.Drawing.Point(405, 239);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(137, 32);
-            this.button3.TabIndex = 1;
+            this.button3.TabIndex = 4;
             this.button3.Text = "Previous Page";
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
@@ -126,7 +126,7 @@
             this.textBox2.Location = new System.Drawing.Point(334, 176);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(161, 26);
-            this.textBox2.TabIndex = 3;
+            this.textBox2.TabIndex = 1;
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged_1);
             // 
             // Log_In_Page
