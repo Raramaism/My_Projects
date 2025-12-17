@@ -55,6 +55,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.button5 = new System.Windows.Forms.Button();
+            this.overallStatisticsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
@@ -73,7 +74,8 @@
             this.antiNatalWardToolStripMenuItem,
             this.laborWardToolStripMenuItem,
             this.accidentAndEmergencyToolStripMenuItem,
-            this.overalStatisticsToolStripMenuItem});
+            this.overalStatisticsToolStripMenuItem,
+            this.overallStatisticsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1350, 24);
@@ -147,8 +149,8 @@
             // overalStatisticsToolStripMenuItem
             // 
             this.overalStatisticsToolStripMenuItem.Name = "overalStatisticsToolStripMenuItem";
-            this.overalStatisticsToolStripMenuItem.Size = new System.Drawing.Size(102, 20);
-            this.overalStatisticsToolStripMenuItem.Text = "Overal Statistics";
+            this.overalStatisticsToolStripMenuItem.Size = new System.Drawing.Size(139, 20);
+            this.overalStatisticsToolStripMenuItem.Text = "High Dependency Unit";
             this.overalStatisticsToolStripMenuItem.Click += new System.EventHandler(this.overalStatisticsToolStripMenuItem_Click);
             // 
             // button1
@@ -282,6 +284,13 @@
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
+            // overallStatisticsToolStripMenuItem
+            // 
+            this.overallStatisticsToolStripMenuItem.Name = "overallStatisticsToolStripMenuItem";
+            this.overallStatisticsToolStripMenuItem.Size = new System.Drawing.Size(105, 20);
+            this.overallStatisticsToolStripMenuItem.Text = "Overall Statistics";
+            this.overallStatisticsToolStripMenuItem.Click += new System.EventHandler(this.overallStatisticsToolStripMenuItem_Click);
+            // 
             // Visual
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -343,5 +352,6 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.ToolStripMenuItem overalStatisticsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem overallStatisticsToolStripMenuItem;
     }
 }

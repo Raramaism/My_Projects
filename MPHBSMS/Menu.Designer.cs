@@ -79,6 +79,7 @@
             this.button3 = new System.Windows.Forms.Button();
             this.listBox2 = new System.Windows.Forms.ListBox();
             this.button4 = new System.Windows.Forms.Button();
+            this.highDependencyUnitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -116,7 +117,8 @@
             this.neoNatalWardToolStripMenuItem,
             this.anteNatalWardToolStripMenuItem,
             this.labourWardToolStripMenuItem,
-            this.accidentAndEmergenceToolStripMenuItem});
+            this.accidentAndEmergenceToolStripMenuItem,
+            this.highDependencyUnitToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
@@ -615,6 +617,13 @@
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
+            // highDependencyUnitToolStripMenuItem
+            // 
+            this.highDependencyUnitToolStripMenuItem.Name = "highDependencyUnitToolStripMenuItem";
+            this.highDependencyUnitToolStripMenuItem.Size = new System.Drawing.Size(94, 20);
+            this.highDependencyUnitToolStripMenuItem.Text = " High Dependency Unit";
+            this.highDependencyUnitToolStripMenuItem.Click += new System.EventHandler(this.highDependencyUnitToolStripMenuItem_Click);
+            // 
             // Menu
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -728,5 +737,6 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.ListBox listBox2;
         private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.ToolStripMenuItem highDependencyUnitToolStripMenuItem;
     }
 }
