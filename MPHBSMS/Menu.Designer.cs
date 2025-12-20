@@ -41,6 +41,7 @@
             this.anteNatalWardToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.labourWardToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.accidentAndEmergenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.highDependencyUnitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.radioButton1 = new System.Windows.Forms.RadioButton();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -79,7 +80,6 @@
             this.button3 = new System.Windows.Forms.Button();
             this.listBox2 = new System.Windows.Forms.ListBox();
             this.button4 = new System.Windows.Forms.Button();
-            this.highDependencyUnitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -190,6 +190,13 @@
             this.accidentAndEmergenceToolStripMenuItem.Text = "Accident and Emergence";
             this.accidentAndEmergenceToolStripMenuItem.Click += new System.EventHandler(this.accidentAndEmergenceToolStripMenuItem_Click_1);
             // 
+            // highDependencyUnitToolStripMenuItem
+            // 
+            this.highDependencyUnitToolStripMenuItem.Name = "highDependencyUnitToolStripMenuItem";
+            this.highDependencyUnitToolStripMenuItem.Size = new System.Drawing.Size(142, 20);
+            this.highDependencyUnitToolStripMenuItem.Text = " High Dependency Unit";
+            this.highDependencyUnitToolStripMenuItem.Click += new System.EventHandler(this.highDependencyUnitToolStripMenuItem_Click);
+            // 
             // radioButton1
             // 
             this.radioButton1.AutoSize = true;
@@ -243,7 +250,7 @@
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.ForeColor = System.Drawing.Color.Transparent;
-            this.label4.Location = new System.Drawing.Point(18, 433);
+            this.label4.Location = new System.Drawing.Point(18, 224);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(50, 20);
             this.label4.TabIndex = 0;
@@ -254,7 +261,7 @@
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.ForeColor = System.Drawing.Color.Transparent;
-            this.label5.Location = new System.Drawing.Point(18, 224);
+            this.label5.Location = new System.Drawing.Point(18, 433);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(27, 20);
             this.label5.TabIndex = 0;
@@ -567,7 +574,7 @@
             this.listBox1.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.listBox1.FormattingEnabled = true;
             this.listBox1.ItemHeight = 19;
-            this.listBox1.Location = new System.Drawing.Point(273, 205);
+            this.listBox1.Location = new System.Drawing.Point(273, 433);
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(275, 175);
             this.listBox1.TabIndex = 4;
@@ -600,7 +607,7 @@
             this.listBox2.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.listBox2.FormattingEnabled = true;
             this.listBox2.ItemHeight = 19;
-            this.listBox2.Location = new System.Drawing.Point(273, 415);
+            this.listBox2.Location = new System.Drawing.Point(273, 224);
             this.listBox2.Name = "listBox2";
             this.listBox2.Size = new System.Drawing.Size(275, 194);
             this.listBox2.TabIndex = 5;
@@ -616,13 +623,6 @@
             this.button4.Text = "Reports";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
-            // 
-            // highDependencyUnitToolStripMenuItem
-            // 
-            this.highDependencyUnitToolStripMenuItem.Name = "highDependencyUnitToolStripMenuItem";
-            this.highDependencyUnitToolStripMenuItem.Size = new System.Drawing.Size(94, 20);
-            this.highDependencyUnitToolStripMenuItem.Text = " High Dependency Unit";
-            this.highDependencyUnitToolStripMenuItem.Click += new System.EventHandler(this.highDependencyUnitToolStripMenuItem_Click);
             // 
             // Menu
             // 

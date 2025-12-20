@@ -29,9 +29,6 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Reports));
-            this.printDocument1 = new System.Drawing.Printing.PrintDocument();
-            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.printDialog1 = new System.Windows.Forms.PrintDialog();
             this.button1 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
@@ -109,11 +106,11 @@
             this.button16 = new System.Windows.Forms.Button();
             this.button17 = new System.Windows.Forms.Button();
             this.button18 = new System.Windows.Forms.Button();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.label37 = new System.Windows.Forms.Label();
+            this.textBox21 = new System.Windows.Forms.TextBox();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // printDialog1
-            // 
-            this.printDialog1.UseEXDialog = true;
             // 
             // button1
             // 
@@ -168,6 +165,7 @@
             this.button7.TabIndex = 20;
             this.button7.Text = "Generate report";
             this.button7.UseVisualStyleBackColor = true;
+            this.button7.Click += new System.EventHandler(this.button7_Click_1);
             // 
             // button8
             // 
@@ -179,6 +177,7 @@
             this.button8.TabIndex = 20;
             this.button8.Text = "Save";
             this.button8.UseVisualStyleBackColor = true;
+            this.button8.Click += new System.EventHandler(this.button8_Click);
             // 
             // button9
             // 
@@ -190,6 +189,7 @@
             this.button9.TabIndex = 20;
             this.button9.Text = "Delete";
             this.button9.UseVisualStyleBackColor = true;
+            this.button9.Click += new System.EventHandler(this.button9_Click);
             // 
             // button10
             // 
@@ -201,6 +201,7 @@
             this.button10.TabIndex = 20;
             this.button10.Text = "Update";
             this.button10.UseVisualStyleBackColor = true;
+            this.button10.Click += new System.EventHandler(this.button10_Click);
             // 
             // label18
             // 
@@ -697,19 +698,19 @@
             // 
             this.label17.AutoSize = true;
             this.label17.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label17.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label17.Location = new System.Drawing.Point(248, 469);
+            this.label17.ForeColor = System.Drawing.SystemColors.Desktop;
+            this.label17.Location = new System.Drawing.Point(283, 501);
             this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(67, 20);
+            this.label17.Size = new System.Drawing.Size(29, 20);
             this.label17.TabIndex = 43;
-            this.label17.Text = "label17";
+            this.label17.Text = "00";
             // 
             // label16
             // 
             this.label16.AutoSize = true;
             this.label16.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label16.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label16.Location = new System.Drawing.Point(21, 469);
+            this.label16.Location = new System.Drawing.Point(21, 501);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(84, 20);
             this.label16.TabIndex = 42;
@@ -780,7 +781,7 @@
             this.label33.AutoSize = true;
             this.label33.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label33.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label33.Location = new System.Drawing.Point(1023, 493);
+            this.label33.Location = new System.Drawing.Point(1021, 527);
             this.label33.Name = "label33";
             this.label33.Size = new System.Drawing.Size(54, 20);
             this.label33.TabIndex = 49;
@@ -791,7 +792,7 @@
             this.label34.AutoSize = true;
             this.label34.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label34.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label34.Location = new System.Drawing.Point(1023, 525);
+            this.label34.Location = new System.Drawing.Point(1021, 559);
             this.label34.Name = "label34";
             this.label34.Size = new System.Drawing.Size(82, 20);
             this.label34.TabIndex = 49;
@@ -802,7 +803,7 @@
             this.label35.AutoSize = true;
             this.label35.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label35.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label35.Location = new System.Drawing.Point(1023, 560);
+            this.label35.Location = new System.Drawing.Point(1021, 491);
             this.label35.Name = "label35";
             this.label35.Size = new System.Drawing.Size(96, 20);
             this.label35.TabIndex = 49;
@@ -822,7 +823,7 @@
             // textBox17
             // 
             this.textBox17.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox17.Location = new System.Drawing.Point(1141, 490);
+            this.textBox17.Location = new System.Drawing.Point(1139, 524);
             this.textBox17.Multiline = true;
             this.textBox17.Name = "textBox17";
             this.textBox17.Size = new System.Drawing.Size(185, 23);
@@ -831,7 +832,7 @@
             // textBox18
             // 
             this.textBox18.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox18.Location = new System.Drawing.Point(1141, 522);
+            this.textBox18.Location = new System.Drawing.Point(1139, 556);
             this.textBox18.Name = "textBox18";
             this.textBox18.Size = new System.Drawing.Size(185, 26);
             this.textBox18.TabIndex = 50;
@@ -839,7 +840,7 @@
             // textBox19
             // 
             this.textBox19.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox19.Location = new System.Drawing.Point(1141, 557);
+            this.textBox19.Location = new System.Drawing.Point(1139, 488);
             this.textBox19.Name = "textBox19";
             this.textBox19.Size = new System.Drawing.Size(185, 26);
             this.textBox19.TabIndex = 50;
@@ -872,6 +873,7 @@
             this.button13.TabIndex = 51;
             this.button13.Text = "Update";
             this.button13.UseVisualStyleBackColor = true;
+            this.button13.Click += new System.EventHandler(this.button13_Click);
             // 
             // button14
             // 
@@ -882,6 +884,7 @@
             this.button14.TabIndex = 51;
             this.button14.Text = "Delete";
             this.button14.UseVisualStyleBackColor = true;
+            this.button14.Click += new System.EventHandler(this.button14_Click);
             // 
             // button15
             // 
@@ -892,6 +895,7 @@
             this.button15.TabIndex = 51;
             this.button15.Text = "Search";
             this.button15.UseVisualStyleBackColor = true;
+            this.button15.Click += new System.EventHandler(this.button15_Click);
             // 
             // button16
             // 
@@ -902,6 +906,7 @@
             this.button16.TabIndex = 51;
             this.button16.Text = "Clear";
             this.button16.UseVisualStyleBackColor = true;
+            this.button16.Click += new System.EventHandler(this.button16_Click);
             // 
             // button17
             // 
@@ -912,6 +917,7 @@
             this.button17.TabIndex = 51;
             this.button17.Text = "View";
             this.button17.UseVisualStyleBackColor = true;
+            this.button17.Click += new System.EventHandler(this.button17_Click);
             // 
             // button18
             // 
@@ -923,6 +929,36 @@
             this.button18.TabIndex = 20;
             this.button18.Text = "Clear";
             this.button18.UseVisualStyleBackColor = true;
+            this.button18.Click += new System.EventHandler(this.button18_Click);
+            // 
+            // dataGridView1
+            // 
+            this.dataGridView1.AllowUserToOrderColumns = true;
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Location = new System.Drawing.Point(516, 493);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.Size = new System.Drawing.Size(443, 196);
+            this.dataGridView1.TabIndex = 52;
+            // 
+            // label37
+            // 
+            this.label37.AutoSize = true;
+            this.label37.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label37.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.label37.Location = new System.Drawing.Point(23, 466);
+            this.label37.Name = "label37";
+            this.label37.Size = new System.Drawing.Size(113, 20);
+            this.label37.TabIndex = 53;
+            this.label37.Text = "Movement ID";
+            // 
+            // textBox21
+            // 
+            this.textBox21.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox21.Location = new System.Drawing.Point(252, 461);
+            this.textBox21.Multiline = true;
+            this.textBox21.Name = "textBox21";
+            this.textBox21.Size = new System.Drawing.Size(229, 26);
+            this.textBox21.TabIndex = 54;
             // 
             // Reports
             // 
@@ -930,6 +966,9 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(70)))), ((int)(((byte)(120)))));
             this.ClientSize = new System.Drawing.Size(1350, 701);
+            this.Controls.Add(this.textBox21);
+            this.Controls.Add(this.label37);
+            this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.button17);
             this.Controls.Add(this.button16);
             this.Controls.Add(this.button15);
@@ -1013,6 +1052,7 @@
             this.Text = "Marondera Provincial Hospital Bed Statistics Management System ";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.Reports_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1020,9 +1060,6 @@
 
         #endregion
 
-        private System.Drawing.Printing.PrintDocument printDocument1;
-        private System.Windows.Forms.SaveFileDialog saveFileDialog1;
-        private System.Windows.Forms.PrintDialog printDialog1;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button2;
@@ -1100,5 +1137,8 @@
         private System.Windows.Forms.Button button16;
         private System.Windows.Forms.Button button17;
         private System.Windows.Forms.Button button18;
+        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.Label label37;
+        private System.Windows.Forms.TextBox textBox21;
     }
 }
