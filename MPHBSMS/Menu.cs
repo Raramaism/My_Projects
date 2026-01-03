@@ -162,286 +162,161 @@ namespace MPHBSMS
 
         private void button1_Click(object sender, EventArgs e)
         {
-            // Constants for Movement Categories
-const string CatAdmission = "Admission";
-const string CatTransferIn = "InterWardTransferIn";
-const string CatDischarge = "Discharge";
-const string CatTransferOut = "InterWardTransferOut";
-const string CatDeath = "Death";
 
-// Assuming this code is inside a method like 'button1_Click'
-OleDbConnection con = null;
-OleDbTransaction transaction = null; 
+            const string CatAdmission = "Admission";
+            const string CatTransferIn = "InterWardTransferIn";
+            const string CatDischarge = "Discharge";
+            const string CatTransferOut = "InterWardTransferOut";
+            const string CatDeath = "Death";
 
-try
-{
-    con = new OleDbConnection(DatabaseHelper.ConnectionString);
-    con.Open();
+            OleDbConnection con = null;
+            OleDbTransaction transaction = null;
 
-    // 1. DATA GATHERING & CLEANING
-    string category = "";
-    if (checkBox1.Checked) category = CatAdmission;
-    else if (checkBox2.Checked) category = CatTransferIn;
-    else if (checkBox3.Checked) category = CatDischarge;
-    else if (checkBox4.Checked) category = CatTransferOut;
-    else if (checkBox5.Checked) category = CatDeath;
-
-    string ward = listBox1.SelectedItem != null ? listBox1.SelectedItem.ToString().Trim() : "";
-    string fromLocation = listBox2.SelectedItem != null ? listBox2.SelectedItem.ToString().Trim() : "";
-
-    // Inline ward -> gender logic (null-safe)
-    string gender = ""; // will be set below
-
-    // Default: show both radios (will be adjusted for gender-specific wards)
-    radioButton1.Visible = true;  // female
-    radioButton2.Visible = true;  // male
-
-    // Normalize for comparison
-    string w = ward.ToLowerInvariant();
-
-    if (w == "male ward")
-    {
-        // Male-only
-        radioButton1.Visible = false;   // hide female
-        radioButton2.Visible = true;
-        radioButton2.Checked = true;
-        gender = "male";
-    }
-    else if (w == "labor ward" ||
-             w == "female ward" ||
-             w == "postnatal ward" ||
-             w == "post natal ward" ||
-             w == "antenatal ward" ||
-             w == "ante natal ward")
-    {
-        // Female-only wards (handle common variants)
-        radioButton2.Visible = false;   // hide male
-        radioButton1.Visible = true;
-        radioButton1.Checked = true;
-        gender = "female";
-    }
-    else
-    {
-        // Mixed/unspecified ward: allow user to choose, preserve any existing checked state
-        radioButton1.Visible = true;
-        radioButton2.Visible = true;
-
-        if (radioButton1.Checked) gender = "female";
-        else if (radioButton2.Checked) gender = "male";
-        else gender = ""; // force user to choose later during validation
-    }
-  
-    // Normalize
-   
-
-    DateTime movementDT = dateTimePicker1.Value;
-    // FIX: Format date/time as string for OLEDB
-    string movementDTString = movementDT.ToString("yyyy/MM/dd HH:mm:ss");
-
-    
-    // Disallow future date/time
-    if (movementDT > DateTime.Now)
-    {
-        MessageBox.Show("Future dates are not allowed. Please choose a date and time not later than now.",
-                        "Invalid Date", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-    }
-
-    // CRITICAL FIX: Clean and standardize data to prevent index conflicts (e.g., "a" vs "A")
-    string hospitalNumber = textBox1.Text.Trim().ToUpper(); // Ensure consistent case
-    string name = textBox2.Text.Trim().ToUpper();
-    string surname = textBox3.Text.Trim().ToUpper();
-    string enteredBy = MPHBSMS.CurrentUser;
-
-    // Validate hospital number format
-    if (!System.Text.RegularExpressions.Regex.IsMatch(hospitalNumber, @"^\d+\/\d+$"))
-    {
-        MessageBox.Show("Invalid hospital number format. Use format like 457/25.",
-                        "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-    }
-
-    // Validation Checks
-    if (string.IsNullOrWhiteSpace(hospitalNumber) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(surname) ||
-        string.IsNullOrEmpty(gender) || string.IsNullOrEmpty(category) || !checkBox6.Checked || string.IsNullOrEmpty(ward))
-    {
-        MessageBox.Show("Please complete all required fields and actions.",
-                        "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-    }
-
-    // 2. PATIENT EXISTENCE CHECK
-    bool patientExists = false;
-    string checkQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE [hospitalNumber] = ?";
-    using (OleDbCommand checkCmd = new OleDbCommand(checkQuery, con))
-    {
-        checkCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-        patientExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
-    }
-
-    // Admission / Discharge Conflict Checks
-    if (category == CatAdmission && patientExists)
-    {
-        MessageBox.Show("This patient is already admitted. Cannot re-admit.",
-                        "Conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-    }
-    if (category != CatAdmission && !patientExists)
-    {
-        MessageBox.Show("Patient does not exist in the active patient database. Cannot process Transfer/Discharge.",
-                        "Conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-    }
-    
-    // Setup for Movement Log 
-    string insertMovementQuery = @"INSERT INTO tblPatientMovement 
-        ([hospitalNumber],[name],[surname],[gender],[ToWard],[FromWard],[MovementDateTime],[category],[enteredBy],[movementID])
-        VALUES (?,?,?,?,?,?,?,?,?,?)";
-    
-    string movementIDnum = MovementIdGenerator.GenerateMovementId();
-
-    // 3 & 4. DATABASE OPERATIONS
-    
-    if (category == CatAdmission)
-    {
-            // CRITICAL FIX: START TRANSACTION
-            transaction = con.BeginTransaction();
-
-            // A. INSERT INTO PARENT TABLE (tblPatientMaster) - Foreign Key Fix
-            string insertMasterQuery = @"INSERT INTO tblPatientMaster 
-            ([hospitalNumber],[name],[surname],[gender],[CurrentWard],[IsAdmitted],[AdmissionDate])
-            VALUES (?,?,?,?,?,?,?)";
-            // Pass the transaction to the command
-            using (OleDbCommand masterCmd = new OleDbCommand(insertMasterQuery, con, transaction))
+            try
             {
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = name;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = surname;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = gender;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = ward;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = "Yes";
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementDTString; // Date Type Fix
-                masterCmd.ExecuteNonQuery();
-            }
-        
-        // B. THEN LOG MOVEMENT
-        // Pass the transaction to the command
-        using (OleDbCommand movementCmd = new OleDbCommand(insertMovementQuery, con, transaction))
-        {
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = name;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = surname;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = gender;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = ward;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = fromLocation;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementDTString; 
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = category;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = enteredBy;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementIDnum; 
-            movementCmd.ExecuteNonQuery();
-        }
+                con = new OleDbConnection(DatabaseHelper.ConnectionString);
+                con.Open();
 
-        // CRITICAL FIX: COMMIT TRANSACTION
-        transaction.Commit();
-    }
-    else 
-    {
-        using (OleDbCommand movementCmd = new OleDbCommand(insertMovementQuery, con))
-        {
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = name;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = surname;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = gender;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = ward;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = fromLocation;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementDTString; 
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = category;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = enteredBy;
-            movementCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementIDnum; 
-            movementCmd.ExecuteNonQuery();
-        }
+                // 1. DATA GATHERING
+                string category = "";
+                if (checkBox1.Checked) category = CatAdmission;
+                else if (checkBox2.Checked) category = CatTransferIn;
+                else if (checkBox3.Checked) category = CatDischarge;
+                else if (checkBox4.Checked) category = CatTransferOut;
+                else if (checkBox5.Checked) category = CatDeath;
 
-        // 4. UPDATE MASTER RECORD
-        if (category == CatTransferIn)
-        {
-            string updateMasterQuery = @"UPDATE tblPatientMaster 
-                                           SET IsAdmitted = 'Yes'
-                                           WHERE [hospitalNumber] = ?"; 
-            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
-            {
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-                masterCmd.ExecuteNonQuery();
-            }
-        }
-        else if ( category == CatDeath)
-        {
-            string updateMasterQuery = @"UPDATE tblPatientMaster 
-                                           SET CurrentWard = ?, IsAdmitted = 'No', DischargeDate = ?
-                                           WHERE [hospitalNumber] = ?"; 
-            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
-            {
-                const string finalWard = "DECEASED";
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = finalWard;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementDTString; 
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-                masterCmd.ExecuteNonQuery();
-            }
-        }
-        else if (category == CatDischarge)
-        {
-            string updateMasterQuery = @"UPDATE tblPatientMaster 
-                                           SET CurrentWard = ?, IsAdmitted = 'No', DischargeDate = ?
-                                           WHERE [hospitalNumber] = ?";
-            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
-            {
-                const string finalWard = "DISCHARGED";
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = finalWard;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementDTString;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-                masterCmd.ExecuteNonQuery();
-            }
-        }
-        else if ( category == CatTransferOut)
-        {
-            string updateMasterQuery = @"UPDATE tblPatientMaster 
-                                           SET IsAdmitted = 'Yes', DischargeDate = ?
-                                           WHERE [hospitalNumber] = ?";
-            using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con))
-            {
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementDTString;
-                masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
-                masterCmd.ExecuteNonQuery();
-            }
-        }
-    }
-    
-    // SUCCESS & CLEARING STEPS
-    ClearInputFields(); 
-    
-    MessageBox.Show("Record successfully processed by " + enteredBy,
-                    "Marondera Provincial Hospital",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-}
- 
-catch (Exception error)
-{
-    // CRITICAL FIX: Rollback transaction on any error
-    if (transaction != null)
-    {
-        try { transaction.Rollback(); } 
-        catch (Exception ex) { /* Safely ignore rollback failure */ }
-    }
+                string ward = listBox1.SelectedItem != null ? listBox1.SelectedItem.ToString().Trim() : "";
+                string fromLocation = listBox2.SelectedItem != null ? listBox2.SelectedItem.ToString().Trim() : "";
+                string hospitalNumber = textBox1.Text.Trim().ToUpper();
+                string name = textBox2.Text.Trim().ToUpper();
+                string surname = textBox3.Text.Trim().ToUpper();
+                string enteredBy = MPHBSMS.CurrentUser;
+                DateTime movementDT = dateTimePicker1.Value;
 
-    MessageBox.Show("Error occured\n" + error.Message, "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-finally
-{
-    if (con != null && con.State == System.Data.ConnectionState.Open)
-    {
-        con.Close();
-    }
-}
+                // Determine Gender
+                string gender = "";
+                if (radioButton1.Checked) gender = "FEMALE";
+                else if (radioButton2.Checked) gender = "MALE";
+
+                // 2. PRE-SAVE VALIDATION
+                if (movementDT > DateTime.Now)
+                {
+                    MessageBox.Show("Future dates are not allowed.", "Invalid Date", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (!System.Text.RegularExpressions.Regex.IsMatch(hospitalNumber, @"^\d+\/\d+$"))
+                {
+                    MessageBox.Show("Invalid format. Use 000/00.", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(hospitalNumber) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(category) || !checkBox6.Checked)
+                {
+                    MessageBox.Show("Please complete all required fields.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // 3. EXISTENCE CHECK
+                bool patientExists = false;
+                string checkQuery = "SELECT COUNT(*) FROM tblPatientMaster WHERE [hospitalNumber] = ?";
+                using (OleDbCommand checkCmd = new OleDbCommand(checkQuery, con))
+                {
+                    checkCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
+                    patientExists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+                }
+
+                if (category == CatAdmission && patientExists)
+                {
+                    MessageBox.Show("Patient is already admitted.", "Conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (category != CatAdmission && !patientExists)
+                {
+                    MessageBox.Show("Patient record not found.", "Conflict", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // 4. START ATOMIC TRANSACTION
+                transaction = con.BeginTransaction();
+                string movementIDnum = MovementIdGenerator.GenerateMovementId();
+
+                // A. LOG MOVEMENT (Standard for all actions)
+                string insertMovementQuery = "INSERT INTO tblPatientMovement " +
+                    "([hospitalNumber],[name],[surname],[gender],[ToWard],[FromWard],[MovementDateTime],[category],[enteredBy],[movementID]) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?,?)";
+
+                using (OleDbCommand movCmd = new OleDbCommand(insertMovementQuery, con, transaction))
+                {
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = name;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = surname;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = gender;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = ward;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = fromLocation;
+                    movCmd.Parameters.Add("?", OleDbType.Date).Value = movementDT;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = category;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = enteredBy;
+                    movCmd.Parameters.Add("?", OleDbType.VarChar).Value = movementIDnum;
+                    movCmd.ExecuteNonQuery();
+                }
+
+                // B. UPDATE MASTER TABLE
+                if (category == CatAdmission)
+                {
+                    string insertMasterQuery = "INSERT INTO tblPatientMaster " +
+                        "([hospitalNumber],[name],[surname],[gender],[CurrentWard],[IsAdmitted],[AdmissionDate]) " +
+                        "VALUES (?,?,?,?,?,?,?)";
+                    using (OleDbCommand masterCmd = new OleDbCommand(insertMasterQuery, con, transaction))
+                    {
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = name;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = surname;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = gender;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = ward;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = "Yes";
+                        masterCmd.Parameters.Add("?", OleDbType.Date).Value = movementDT;
+                        masterCmd.ExecuteNonQuery();
+                    }
+                }
+                else
+                {
+                    string finalWard = ward;
+                    string isAdmitted = "Yes";
+
+                    if (category == CatDischarge) { finalWard = "DISCHARGED"; isAdmitted = "No"; }
+                    else if (category == CatDeath) { finalWard = "DECEASED"; isAdmitted = "No"; }
+
+                    string updateMasterQuery = "UPDATE tblPatientMaster SET CurrentWard = ?, IsAdmitted = ?, DischargeDate = ? WHERE [hospitalNumber] = ?";
+
+                    using (OleDbCommand masterCmd = new OleDbCommand(updateMasterQuery, con, transaction))
+                    {
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = finalWard;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = isAdmitted;
+                        masterCmd.Parameters.Add("?", OleDbType.Date).Value = (isAdmitted == "No") ? (object)movementDT : DBNull.Value;
+                        masterCmd.Parameters.Add("?", OleDbType.VarChar).Value = hospitalNumber;
+                        masterCmd.ExecuteNonQuery();
+                    }
+                }
+
+                // 5. FINALIZE
+                transaction.Commit();
+
+                // Log the activity using standard concatenation to avoid $ interpolation
+                MPHBSMS.LogActivity("PROCESS (" + category + "): Hospital No: " + hospitalNumber + " by " + enteredBy);
+
+                ClearInputFields();
+                MessageBox.Show("Patient record successfully processed.", "Marondera Hospital", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception error)
+            {
+                if (transaction != null) transaction.Rollback();
+                MessageBox.Show("Database Error: " + error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (con != null) con.Close();
+            }
         }    
 
 
@@ -1664,6 +1539,8 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
 
         private void button2_Click(object sender, EventArgs e)
         {
+
+            MPHBSMS.LogActivity("NAVIGATE: User opened the Visuals/Graphs section.");
             Visual obj = new Visual();
             this.Close();
             obj.Show();
@@ -1672,6 +1549,14 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
 
         private void button3_Click(object sender, EventArgs e)
         {
+            MPHBSMS.LogActivity("NAVIGATE: User returned to Home Dashboard.");
+
+            // 1. Record the logout in the audit trail
+            MPHBSMS.LogLogout();
+
+            // 2. Clear the current user for security
+            MPHBSMS.CurrentUser = "";
+
             Form1 obj = new Form1();
             this.Close();
             obj.Show();
@@ -2083,6 +1968,7 @@ private void mentalHealthUnitToolStripMenuItem_Click(object sender, EventArgs e)
 
         private void button4_Click(object sender, EventArgs e)
         {
+            MPHBSMS.LogActivity("NAVIGATE: User opened the Reports/Audit section.");
             Reports obj = new Reports();
             this.Close();
             obj.Show();

@@ -47,11 +47,20 @@ namespace MPHBSMS
                        
                         MPHBSMS.CurrentUser = reader[0].ToString().Trim();
 
+                        // Set the global username for the entire session
+                        MPHBSMS.CurrentUser = name;
+
+                        // Record the entry
+                        MPHBSMS.LogLogin();
+
                         Menu menupage = new Menu();
                         menupage.Show();
                         this.Hide(); 
                     } else 
                     {
+
+                        // 1. Record the failed attempt immediately
+                        MPHBSMS.LogFailedLogin(textBox1.Text);
                         textBox1.Clear();
                         textBox2.Clear();
                         textBox1.Focus();

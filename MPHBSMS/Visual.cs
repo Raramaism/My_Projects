@@ -22,6 +22,12 @@ namespace MPHBSMS
 
         private void button2_Click(object sender, EventArgs e)
         {
+            // 1. Record the logout in the audit trail
+            MPHBSMS.LogLogout();
+
+            // 2. Clear the current user for security
+            MPHBSMS.CurrentUser = "";
+            
             Form1 obj = new Form1();
             this.Close();
             obj.Show();
@@ -165,34 +171,6 @@ foreach (var kvp in categoryColors)
 }
 // END OF CHART CODE
 
-// ----------------------------------------------------
-// 2. DATAGRIDVIEW LOADING 
-// ----------------------------------------------------
-
-/*// FIX APPLIED TO DATAGRIDVIEW QUERY: Use Subquery to resolve COUNT(DISTINCT...) syntax error.
-string myquaery = "SELECT Category, COUNT(HospitalID) AS CategoryCount " +
-                  "FROM ( " +
-                      "SELECT DISTINCT PM.hospitalNumber AS HospitalID, TM.category AS Category " +
-                      "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
-                      "WHERE PM.currentWard = '" + safeWard + "' " +
-                  ") AS FilteredMovements " + // CRITICAL: Subquery alias added
-                  "GROUP BY Category";
-
-try
-{
-    using (OleDbCommand comm = new OleDbCommand(myquaery, con))
-    {
-        OleDbDataAdapter dm = new OleDbDataAdapter(comm);
-        DataTable dtt = new DataTable();
-        dm.Fill(dtt);
-        dataGridView2.DataSource = dtt;
-    }
-}
-catch (Exception ex)
-{
-    // Handle database errors for DataGridView loading
-    MessageBox.Show("Error loading DataGridView data: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}*/
 // DataGridView query with direct string injection
 string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
                   "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
@@ -639,35 +617,6 @@ dataGridView2.DataSource = dtt;
                     }
                     // END OF CHART CODE
 
-                    // ----------------------------------------------------
-                    // 2. DATAGRIDVIEW LOADING 
-                    // ----------------------------------------------------
-
-                    /*// FIX APPLIED TO DATAGRIDVIEW QUERY: Use Subquery to resolve COUNT(DISTINCT...) syntax error.
-                    string myquaery = "SELECT Category, COUNT(HospitalID) AS CategoryCount " +
-                                      "FROM ( " +
-                                          "SELECT DISTINCT PM.hospitalNumber AS HospitalID, TM.category AS Category " +
-                                          "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
-                                          "WHERE PM.currentWard = '" + safeWard + "' " +
-                                      ") AS FilteredMovements " + // CRITICAL: Subquery alias added
-                                      "GROUP BY Category";
-
-                    try
-                    {
-                        using (OleDbCommand comm = new OleDbCommand(myquaery, con))
-                        {
-                            OleDbDataAdapter dm = new OleDbDataAdapter(comm);
-                            DataTable dtt = new DataTable();
-                            dm.Fill(dtt);
-                            dataGridView2.DataSource = dtt;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Handle database errors for DataGridView loading
-                        MessageBox.Show("Error loading DataGridView data: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }*/
-                    // DataGridView query with direct string injection
                     string myquaery = "SELECT PM.*, TM.MovementDateTime, TM.toWard, TM.fromWard, TM.category, TM.enteredBy " +
                                       "FROM tblPatientMaster AS PM INNER JOIN tblPatientMovement AS TM ON PM.hospitalNumber = TM.hospitalNumber " +
                                       "WHERE PM.currentWard = '" + safeWard + "'";

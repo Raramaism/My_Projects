@@ -13,6 +13,8 @@ namespace MPHBSMS
 {
     public partial class Form1 : Form
     {
+
+
         public Form1()
         {
             InitializeComponent();
@@ -81,7 +83,7 @@ namespace MPHBSMS
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+           
         }
 
         private void button3_Click_1(object sender, EventArgs e)
@@ -95,5 +97,35 @@ namespace MPHBSMS
         {
             
         }
-    }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            BackupManager.ExecuteAdvancedBackup();
+            // This captures the logout even if they don't click the logout button
+            if (MPHBSMS.CurrentUser != "")
+            {
+                MPHBSMS.LogLogout();
+            }
+        }
+
+        private void backupTimer_Tick(object sender, EventArgs e)
+        {
+           
+
+            // Check for Shift Change at 4:00 PM
+            if (DateTime.Now.Hour == 16 && DateTime.Now.Minute == 0)
+            {
+                // Prevent multiple backups in the same minute
+                backupTimer.Enabled = false;
+
+                BackupManager.ExecuteAdvancedBackup();
+
+
+                // Re-enable after the minute passes
+                System.Threading.Thread.Sleep(61000);
+                backupTimer.Enabled = true;
+            }
+        }
 }
+}
+

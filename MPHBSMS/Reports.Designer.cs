@@ -109,13 +109,25 @@
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.label37 = new System.Windows.Forms.Label();
             this.textBox21 = new System.Windows.Forms.TextBox();
+            this.button19 = new System.Windows.Forms.Button();
+            this.button20 = new System.Windows.Forms.Button();
+            this.button21 = new System.Windows.Forms.Button();
+            this.listBox1 = new System.Windows.Forms.ListBox();
+            this.button22 = new System.Windows.Forms.Button();
+            this.button23 = new System.Windows.Forms.Button();
+            this.label38 = new System.Windows.Forms.Label();
+            this.label39 = new System.Windows.Forms.Label();
+            this.button24 = new System.Windows.Forms.Button();
+            this.button25 = new System.Windows.Forms.Button();
+            this.button26 = new System.Windows.Forms.Button();
+            this.lblLastBackup = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
             // button1
             // 
-            this.button1.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(321, 595);
+            this.button1.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button1.Location = new System.Drawing.Point(234, 595);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(97, 30);
             this.button1.TabIndex = 9;
@@ -125,8 +137,8 @@
             // 
             // button3
             // 
-            this.button3.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button3.Location = new System.Drawing.Point(218, 595);
+            this.button3.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button3.Location = new System.Drawing.Point(131, 595);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(97, 30);
             this.button3.TabIndex = 8;
@@ -136,8 +148,8 @@
             // 
             // button2
             // 
-            this.button2.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button2.Location = new System.Drawing.Point(115, 595);
+            this.button2.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button2.Location = new System.Drawing.Point(28, 595);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(97, 30);
             this.button2.TabIndex = 6;
@@ -149,21 +161,21 @@
             // 
             this.textBox3.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox3.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox3.Location = new System.Drawing.Point(252, 39);
+            this.textBox3.Location = new System.Drawing.Point(228, 39);
             this.textBox3.Multiline = true;
             this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(229, 25);
+            this.textBox3.Size = new System.Drawing.Size(253, 25);
             this.textBox3.TabIndex = 18;
             // 
             // button7
             // 
             this.button7.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button7.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button7.Location = new System.Drawing.Point(115, 631);
+            this.button7.Location = new System.Drawing.Point(28, 631);
             this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(165, 34);
+            this.button7.Size = new System.Drawing.Size(221, 34);
             this.button7.TabIndex = 20;
-            this.button7.Text = "Generate report";
+            this.button7.Text = "Generate  Patient History report";
             this.button7.UseVisualStyleBackColor = true;
             this.button7.Click += new System.EventHandler(this.button7_Click_1);
             // 
@@ -171,7 +183,7 @@
             // 
             this.button8.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button8.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button8.Location = new System.Drawing.Point(115, 553);
+            this.button8.Location = new System.Drawing.Point(28, 553);
             this.button8.Name = "button8";
             this.button8.Size = new System.Drawing.Size(97, 34);
             this.button8.TabIndex = 20;
@@ -182,8 +194,8 @@
             // button9
             // 
             this.button9.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button9.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button9.Location = new System.Drawing.Point(218, 553);
+            this.button9.ForeColor = System.Drawing.Color.Red;
+            this.button9.Location = new System.Drawing.Point(131, 553);
             this.button9.Name = "button9";
             this.button9.Size = new System.Drawing.Size(97, 34);
             this.button9.TabIndex = 20;
@@ -195,7 +207,7 @@
             // 
             this.button10.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button10.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button10.Location = new System.Drawing.Point(321, 553);
+            this.button10.Location = new System.Drawing.Point(234, 553);
             this.button10.Name = "button10";
             this.button10.Size = new System.Drawing.Size(97, 34);
             this.button10.TabIndex = 20;
@@ -218,9 +230,9 @@
             // 
             this.textBox4.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox4.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox4.Location = new System.Drawing.Point(252, 70);
+            this.textBox4.Location = new System.Drawing.Point(228, 70);
             this.textBox4.Name = "textBox4";
-            this.textBox4.Size = new System.Drawing.Size(229, 26);
+            this.textBox4.Size = new System.Drawing.Size(253, 26);
             this.textBox4.TabIndex = 18;
             // 
             // label19
@@ -238,9 +250,9 @@
             // 
             this.textBox5.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox5.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox5.Location = new System.Drawing.Point(252, 102);
+            this.textBox5.Location = new System.Drawing.Point(228, 102);
             this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(229, 26);
+            this.textBox5.Size = new System.Drawing.Size(253, 26);
             this.textBox5.TabIndex = 18;
             // 
             // label20
@@ -258,9 +270,9 @@
             // 
             this.textBox6.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox6.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox6.Location = new System.Drawing.Point(252, 136);
+            this.textBox6.Location = new System.Drawing.Point(228, 136);
             this.textBox6.Name = "textBox6";
-            this.textBox6.Size = new System.Drawing.Size(229, 26);
+            this.textBox6.Size = new System.Drawing.Size(253, 26);
             this.textBox6.TabIndex = 18;
             // 
             // label21
@@ -278,9 +290,9 @@
             // 
             this.textBox7.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox7.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox7.Location = new System.Drawing.Point(252, 170);
+            this.textBox7.Location = new System.Drawing.Point(228, 170);
             this.textBox7.Name = "textBox7";
-            this.textBox7.Size = new System.Drawing.Size(229, 26);
+            this.textBox7.Size = new System.Drawing.Size(253, 26);
             this.textBox7.TabIndex = 18;
             // 
             // label22
@@ -298,9 +310,9 @@
             // 
             this.textBox8.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox8.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox8.Location = new System.Drawing.Point(252, 203);
+            this.textBox8.Location = new System.Drawing.Point(228, 203);
             this.textBox8.Name = "textBox8";
-            this.textBox8.Size = new System.Drawing.Size(229, 26);
+            this.textBox8.Size = new System.Drawing.Size(253, 26);
             this.textBox8.TabIndex = 18;
             // 
             // label23
@@ -318,9 +330,9 @@
             // 
             this.textBox9.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox9.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox9.Location = new System.Drawing.Point(252, 236);
+            this.textBox9.Location = new System.Drawing.Point(228, 236);
             this.textBox9.Name = "textBox9";
-            this.textBox9.Size = new System.Drawing.Size(229, 26);
+            this.textBox9.Size = new System.Drawing.Size(253, 26);
             this.textBox9.TabIndex = 18;
             // 
             // label24
@@ -338,9 +350,9 @@
             // 
             this.textBox10.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox10.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox10.Location = new System.Drawing.Point(252, 268);
+            this.textBox10.Location = new System.Drawing.Point(228, 268);
             this.textBox10.Name = "textBox10";
-            this.textBox10.Size = new System.Drawing.Size(229, 26);
+            this.textBox10.Size = new System.Drawing.Size(253, 26);
             this.textBox10.TabIndex = 18;
             // 
             // label25
@@ -358,9 +370,9 @@
             // 
             this.textBox11.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox11.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox11.Location = new System.Drawing.Point(252, 300);
+            this.textBox11.Location = new System.Drawing.Point(228, 300);
             this.textBox11.Name = "textBox11";
-            this.textBox11.Size = new System.Drawing.Size(229, 26);
+            this.textBox11.Size = new System.Drawing.Size(253, 26);
             this.textBox11.TabIndex = 18;
             // 
             // label26
@@ -378,9 +390,9 @@
             // 
             this.textBox12.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox12.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox12.Location = new System.Drawing.Point(252, 333);
+            this.textBox12.Location = new System.Drawing.Point(228, 333);
             this.textBox12.Name = "textBox12";
-            this.textBox12.Size = new System.Drawing.Size(229, 26);
+            this.textBox12.Size = new System.Drawing.Size(253, 26);
             this.textBox12.TabIndex = 18;
             // 
             // label27
@@ -398,9 +410,9 @@
             // 
             this.textBox13.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox13.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox13.Location = new System.Drawing.Point(252, 365);
+            this.textBox13.Location = new System.Drawing.Point(228, 365);
             this.textBox13.Name = "textBox13";
-            this.textBox13.Size = new System.Drawing.Size(229, 26);
+            this.textBox13.Size = new System.Drawing.Size(253, 26);
             this.textBox13.TabIndex = 18;
             // 
             // label28
@@ -418,9 +430,9 @@
             // 
             this.textBox14.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox14.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox14.Location = new System.Drawing.Point(252, 397);
+            this.textBox14.Location = new System.Drawing.Point(228, 397);
             this.textBox14.Name = "textBox14";
-            this.textBox14.Size = new System.Drawing.Size(229, 26);
+            this.textBox14.Size = new System.Drawing.Size(253, 26);
             this.textBox14.TabIndex = 18;
             // 
             // label29
@@ -438,9 +450,9 @@
             // 
             this.textBox15.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox15.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.textBox15.Location = new System.Drawing.Point(252, 429);
+            this.textBox15.Location = new System.Drawing.Point(228, 429);
             this.textBox15.Name = "textBox15";
-            this.textBox15.Size = new System.Drawing.Size(229, 26);
+            this.textBox15.Size = new System.Drawing.Size(253, 26);
             this.textBox15.TabIndex = 18;
             // 
             // label30
@@ -459,7 +471,7 @@
             this.label13.AutoSize = true;
             this.label13.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label13.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label13.Location = new System.Drawing.Point(1097, 212);
+            this.label13.Location = new System.Drawing.Point(1100, 195);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(65, 20);
             this.label13.TabIndex = 41;
@@ -471,7 +483,7 @@
             this.label12.AutoSize = true;
             this.label12.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label12.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label12.Location = new System.Drawing.Point(1097, 175);
+            this.label12.Location = new System.Drawing.Point(1100, 158);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(198, 20);
             this.label12.TabIndex = 39;
@@ -483,7 +495,7 @@
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label11.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label11.Location = new System.Drawing.Point(1097, 144);
+            this.label11.Location = new System.Drawing.Point(1100, 127);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(96, 20);
             this.label11.TabIndex = 38;
@@ -495,7 +507,7 @@
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label10.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label10.Location = new System.Drawing.Point(1097, 106);
+            this.label10.Location = new System.Drawing.Point(1100, 89);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(184, 20);
             this.label10.TabIndex = 37;
@@ -507,7 +519,7 @@
             this.label14.AutoSize = true;
             this.label14.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label14.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label14.Location = new System.Drawing.Point(1097, 65);
+            this.label14.Location = new System.Drawing.Point(1100, 48);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(99, 20);
             this.label14.TabIndex = 40;
@@ -519,7 +531,7 @@
             this.label9.AutoSize = true;
             this.label9.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label9.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label9.Location = new System.Drawing.Point(1301, 212);
+            this.label9.Location = new System.Drawing.Point(1304, 195);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(29, 20);
             this.label9.TabIndex = 32;
@@ -531,7 +543,7 @@
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label8.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label8.Location = new System.Drawing.Point(1301, 175);
+            this.label8.Location = new System.Drawing.Point(1304, 158);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(29, 20);
             this.label8.TabIndex = 33;
@@ -543,7 +555,7 @@
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label7.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label7.Location = new System.Drawing.Point(1301, 144);
+            this.label7.Location = new System.Drawing.Point(1304, 127);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(29, 20);
             this.label7.TabIndex = 34;
@@ -555,7 +567,7 @@
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label6.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label6.Location = new System.Drawing.Point(1301, 106);
+            this.label6.Location = new System.Drawing.Point(1304, 89);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(29, 20);
             this.label6.TabIndex = 35;
@@ -567,7 +579,7 @@
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label5.Location = new System.Drawing.Point(1301, 71);
+            this.label5.Location = new System.Drawing.Point(1304, 54);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(29, 20);
             this.label5.TabIndex = 36;
@@ -578,7 +590,7 @@
             // 
             this.comboBox2.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(931, 182);
+            this.comboBox2.Location = new System.Drawing.Point(934, 165);
             this.comboBox2.Name = "comboBox2";
             this.comboBox2.Size = new System.Drawing.Size(125, 28);
             this.comboBox2.TabIndex = 24;
@@ -588,7 +600,7 @@
             // 
             this.comboBox1.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(931, 145);
+            this.comboBox1.Location = new System.Drawing.Point(934, 128);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(125, 28);
             this.comboBox1.TabIndex = 23;
@@ -597,13 +609,13 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Bookman Old Style", 12.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label3.Location = new System.Drawing.Point(801, 22);
+            this.label3.Font = new System.Drawing.Font("Bookman Old Style", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.label3.Location = new System.Drawing.Point(821, 6);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(537, 21);
+            this.label3.Size = new System.Drawing.Size(474, 32);
             this.label3.TabIndex = 31;
-            this.label3.Text = "Enter date ranges below to get total number of slected category";
+            this.label3.Text = "Quick View Statistics Dashboard";
             this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // label2
@@ -611,11 +623,11 @@
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label2.Location = new System.Drawing.Point(798, 75);
+            this.label2.Location = new System.Drawing.Point(801, 58);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(110, 20);
+            this.label2.Size = new System.Drawing.Size(90, 20);
             this.label2.TabIndex = 27;
-            this.label2.Text = "START DATE";
+            this.label2.Text = "Start Date";
             this.label2.Click += new System.EventHandler(this.label2_Click);
             // 
             // label15
@@ -623,7 +635,7 @@
             this.label15.AutoSize = true;
             this.label15.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label15.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label15.Location = new System.Drawing.Point(798, 190);
+            this.label15.Location = new System.Drawing.Point(801, 173);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(50, 20);
             this.label15.TabIndex = 28;
@@ -635,11 +647,11 @@
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label4.Location = new System.Drawing.Point(798, 153);
+            this.label4.Location = new System.Drawing.Point(801, 136);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(100, 20);
+            this.label4.Size = new System.Drawing.Size(79, 20);
             this.label4.TabIndex = 29;
-            this.label4.Text = "CATEGORY";
+            this.label4.Text = "Category";
             this.label4.Click += new System.EventHandler(this.label4_Click);
             // 
             // label1
@@ -647,17 +659,17 @@
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label1.Location = new System.Drawing.Point(798, 113);
+            this.label1.Location = new System.Drawing.Point(801, 96);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(94, 20);
+            this.label1.Size = new System.Drawing.Size(83, 20);
             this.label1.TabIndex = 30;
-            this.label1.Text = "END DATE";
+            this.label1.Text = "End Date";
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // textBox2
             // 
             this.textBox2.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox2.Location = new System.Drawing.Point(931, 107);
+            this.textBox2.Location = new System.Drawing.Point(934, 90);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(125, 26);
             this.textBox2.TabIndex = 22;
@@ -666,7 +678,7 @@
             // textBox1
             // 
             this.textBox1.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox1.Location = new System.Drawing.Point(931, 69);
+            this.textBox1.Location = new System.Drawing.Point(934, 52);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(126, 26);
             this.textBox1.TabIndex = 21;
@@ -675,9 +687,9 @@
             // button6
             // 
             this.button6.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button6.Location = new System.Drawing.Point(981, 232);
+            this.button6.Location = new System.Drawing.Point(1223, 226);
             this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(75, 30);
+            this.button6.Size = new System.Drawing.Size(75, 29);
             this.button6.TabIndex = 26;
             this.button6.Text = "Clear";
             this.button6.UseVisualStyleBackColor = true;
@@ -686,11 +698,11 @@
             // button5
             // 
             this.button5.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button5.Location = new System.Drawing.Point(863, 232);
+            this.button5.Location = new System.Drawing.Point(811, 224);
             this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(96, 30);
+            this.button5.Size = new System.Drawing.Size(73, 30);
             this.button5.TabIndex = 25;
-            this.button5.Text = "Generate";
+            this.button5.Text = "Fetch";
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click_2);
             // 
@@ -719,36 +731,38 @@
             // label31
             // 
             this.label31.AutoSize = true;
-            this.label31.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label31.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label31.ForeColor = System.Drawing.SystemColors.Control;
-            this.label31.Location = new System.Drawing.Point(1070, 365);
+            this.label31.Location = new System.Drawing.Point(497, 114);
             this.label31.Name = "label31";
-            this.label31.Size = new System.Drawing.Size(86, 19);
+            this.label31.Size = new System.Drawing.Size(114, 20);
             this.label31.TabIndex = 46;
             this.label31.Text = "Enter criteria";
             // 
             // label32
             // 
             this.label32.AutoSize = true;
-            this.label32.Font = new System.Drawing.Font("Times New Roman", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label32.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label32.ForeColor = System.Drawing.SystemColors.Control;
-            this.label32.Location = new System.Drawing.Point(1070, 327);
+            this.label32.Location = new System.Drawing.Point(497, 76);
             this.label32.Name = "label32";
-            this.label32.Size = new System.Drawing.Size(91, 19);
+            this.label32.Size = new System.Drawing.Size(118, 20);
             this.label32.TabIndex = 47;
             this.label32.Text = "Select criteria";
             // 
             // comboBox3
             // 
+            this.comboBox3.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Location = new System.Drawing.Point(1178, 324);
+            this.comboBox3.Location = new System.Drawing.Point(619, 74);
             this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(148, 21);
+            this.comboBox3.Size = new System.Drawing.Size(148, 28);
             this.comboBox3.TabIndex = 44;
             // 
             // textBox16
             // 
-            this.textBox16.Location = new System.Drawing.Point(1178, 360);
+            this.textBox16.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox16.Location = new System.Drawing.Point(619, 110);
             this.textBox16.Multiline = true;
             this.textBox16.Name = "textBox16";
             this.textBox16.Size = new System.Drawing.Size(148, 24);
@@ -757,9 +771,9 @@
             // button4
             // 
             this.button4.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button4.Location = new System.Drawing.Point(1074, 395);
+            this.button4.Location = new System.Drawing.Point(542, 145);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(75, 29);
+            this.button4.Size = new System.Drawing.Size(78, 29);
             this.button4.TabIndex = 7;
             this.button4.Text = "Search";
             this.button4.UseVisualStyleBackColor = true;
@@ -768,7 +782,7 @@
             // button11
             // 
             this.button11.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button11.Location = new System.Drawing.Point(1251, 395);
+            this.button11.Location = new System.Drawing.Point(635, 145);
             this.button11.Name = "button11";
             this.button11.Size = new System.Drawing.Size(75, 29);
             this.button11.TabIndex = 48;
@@ -781,7 +795,7 @@
             this.label33.AutoSize = true;
             this.label33.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label33.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label33.Location = new System.Drawing.Point(1021, 527);
+            this.label33.Location = new System.Drawing.Point(1008, 414);
             this.label33.Name = "label33";
             this.label33.Size = new System.Drawing.Size(54, 20);
             this.label33.TabIndex = 49;
@@ -792,7 +806,7 @@
             this.label34.AutoSize = true;
             this.label34.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label34.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label34.Location = new System.Drawing.Point(1021, 559);
+            this.label34.Location = new System.Drawing.Point(1008, 446);
             this.label34.Name = "label34";
             this.label34.Size = new System.Drawing.Size(82, 20);
             this.label34.TabIndex = 49;
@@ -803,7 +817,7 @@
             this.label35.AutoSize = true;
             this.label35.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label35.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label35.Location = new System.Drawing.Point(1021, 491);
+            this.label35.Location = new System.Drawing.Point(1008, 378);
             this.label35.Name = "label35";
             this.label35.Size = new System.Drawing.Size(96, 20);
             this.label35.TabIndex = 49;
@@ -814,7 +828,7 @@
             this.label36.AutoSize = true;
             this.label36.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label36.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.label36.Location = new System.Drawing.Point(1023, 594);
+            this.label36.Location = new System.Drawing.Point(1010, 481);
             this.label36.Name = "label36";
             this.label36.Size = new System.Drawing.Size(82, 20);
             this.label36.TabIndex = 49;
@@ -823,40 +837,40 @@
             // textBox17
             // 
             this.textBox17.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox17.Location = new System.Drawing.Point(1139, 524);
+            this.textBox17.Location = new System.Drawing.Point(1121, 411);
             this.textBox17.Multiline = true;
             this.textBox17.Name = "textBox17";
-            this.textBox17.Size = new System.Drawing.Size(185, 23);
+            this.textBox17.Size = new System.Drawing.Size(206, 23);
             this.textBox17.TabIndex = 50;
             // 
             // textBox18
             // 
             this.textBox18.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox18.Location = new System.Drawing.Point(1139, 556);
+            this.textBox18.Location = new System.Drawing.Point(1121, 443);
             this.textBox18.Name = "textBox18";
-            this.textBox18.Size = new System.Drawing.Size(185, 26);
+            this.textBox18.Size = new System.Drawing.Size(206, 26);
             this.textBox18.TabIndex = 50;
             // 
             // textBox19
             // 
             this.textBox19.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox19.Location = new System.Drawing.Point(1139, 488);
+            this.textBox19.Location = new System.Drawing.Point(1121, 375);
             this.textBox19.Name = "textBox19";
-            this.textBox19.Size = new System.Drawing.Size(185, 26);
+            this.textBox19.Size = new System.Drawing.Size(206, 26);
             this.textBox19.TabIndex = 50;
             // 
             // textBox20
             // 
             this.textBox20.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox20.Location = new System.Drawing.Point(1141, 591);
+            this.textBox20.Location = new System.Drawing.Point(1123, 478);
             this.textBox20.Name = "textBox20";
-            this.textBox20.Size = new System.Drawing.Size(185, 26);
+            this.textBox20.Size = new System.Drawing.Size(206, 26);
             this.textBox20.TabIndex = 50;
             // 
             // button12
             // 
             this.button12.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button12.Location = new System.Drawing.Point(1026, 627);
+            this.button12.Location = new System.Drawing.Point(1006, 590);
             this.button12.Name = "button12";
             this.button12.Size = new System.Drawing.Size(97, 26);
             this.button12.TabIndex = 51;
@@ -867,7 +881,7 @@
             // button13
             // 
             this.button13.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button13.Location = new System.Drawing.Point(1127, 627);
+            this.button13.Location = new System.Drawing.Point(1121, 590);
             this.button13.Name = "button13";
             this.button13.Size = new System.Drawing.Size(97, 26);
             this.button13.TabIndex = 51;
@@ -878,7 +892,8 @@
             // button14
             // 
             this.button14.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button14.Location = new System.Drawing.Point(1229, 627);
+            this.button14.ForeColor = System.Drawing.Color.Red;
+            this.button14.Location = new System.Drawing.Point(1232, 590);
             this.button14.Name = "button14";
             this.button14.Size = new System.Drawing.Size(97, 26);
             this.button14.TabIndex = 51;
@@ -889,7 +904,7 @@
             // button15
             // 
             this.button15.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button15.Location = new System.Drawing.Point(1026, 658);
+            this.button15.Location = new System.Drawing.Point(1006, 621);
             this.button15.Name = "button15";
             this.button15.Size = new System.Drawing.Size(97, 26);
             this.button15.TabIndex = 51;
@@ -900,7 +915,7 @@
             // button16
             // 
             this.button16.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button16.Location = new System.Drawing.Point(1127, 658);
+            this.button16.Location = new System.Drawing.Point(1121, 621);
             this.button16.Name = "button16";
             this.button16.Size = new System.Drawing.Size(97, 26);
             this.button16.TabIndex = 51;
@@ -911,11 +926,11 @@
             // button17
             // 
             this.button17.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button17.Location = new System.Drawing.Point(1229, 658);
+            this.button17.Location = new System.Drawing.Point(1232, 620);
             this.button17.Name = "button17";
             this.button17.Size = new System.Drawing.Size(97, 26);
             this.button17.TabIndex = 51;
-            this.button17.Text = "View";
+            this.button17.Text = "Grid View";
             this.button17.UseVisualStyleBackColor = true;
             this.button17.Click += new System.EventHandler(this.button17_Click);
             // 
@@ -923,9 +938,9 @@
             // 
             this.button18.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button18.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button18.Location = new System.Drawing.Point(321, 631);
+            this.button18.Location = new System.Drawing.Point(255, 631);
             this.button18.Name = "button18";
-            this.button18.Size = new System.Drawing.Size(97, 34);
+            this.button18.Size = new System.Drawing.Size(76, 34);
             this.button18.TabIndex = 20;
             this.button18.Text = "Clear";
             this.button18.UseVisualStyleBackColor = true;
@@ -935,10 +950,11 @@
             // 
             this.dataGridView1.AllowUserToOrderColumns = true;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(516, 493);
+            this.dataGridView1.Location = new System.Drawing.Point(560, 375);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(443, 196);
+            this.dataGridView1.Size = new System.Drawing.Size(443, 305);
             this.dataGridView1.TabIndex = 52;
+            this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
             // label37
             // 
@@ -954,11 +970,138 @@
             // textBox21
             // 
             this.textBox21.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox21.Location = new System.Drawing.Point(252, 461);
+            this.textBox21.Location = new System.Drawing.Point(228, 461);
             this.textBox21.Multiline = true;
             this.textBox21.Name = "textBox21";
-            this.textBox21.Size = new System.Drawing.Size(229, 26);
+            this.textBox21.Size = new System.Drawing.Size(278, 26);
             this.textBox21.TabIndex = 54;
+            // 
+            // button19
+            // 
+            this.button19.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button19.Location = new System.Drawing.Point(981, 225);
+            this.button19.Name = "button19";
+            this.button19.Size = new System.Drawing.Size(75, 29);
+            this.button19.TabIndex = 55;
+            this.button19.Text = "Save";
+            this.button19.UseVisualStyleBackColor = true;
+            this.button19.Click += new System.EventHandler(this.button19_Click);
+            // 
+            // button20
+            // 
+            this.button20.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button20.Location = new System.Drawing.Point(897, 225);
+            this.button20.Name = "button20";
+            this.button20.Size = new System.Drawing.Size(74, 29);
+            this.button20.TabIndex = 55;
+            this.button20.Text = "Overal ";
+            this.button20.UseVisualStyleBackColor = true;
+            this.button20.Click += new System.EventHandler(this.button20_Click);
+            // 
+            // button21
+            // 
+            this.button21.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button21.Location = new System.Drawing.Point(1006, 650);
+            this.button21.Name = "button21";
+            this.button21.Size = new System.Drawing.Size(135, 30);
+            this.button21.TabIndex = 56;
+            this.button21.Text = "Account report";
+            this.button21.UseVisualStyleBackColor = true;
+            this.button21.Click += new System.EventHandler(this.button21_Click);
+            // 
+            // listBox1
+            // 
+            this.listBox1.FormattingEnabled = true;
+            this.listBox1.Location = new System.Drawing.Point(1006, 512);
+            this.listBox1.Name = "listBox1";
+            this.listBox1.Size = new System.Drawing.Size(324, 69);
+            this.listBox1.TabIndex = 57;
+            // 
+            // button22
+            // 
+            this.button22.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button22.Location = new System.Drawing.Point(1141, 650);
+            this.button22.Name = "button22";
+            this.button22.Size = new System.Drawing.Size(81, 30);
+            this.button22.TabIndex = 56;
+            this.button22.Text = "Load txt";
+            this.button22.UseVisualStyleBackColor = true;
+            this.button22.Click += new System.EventHandler(this.button22_Click);
+            // 
+            // button23
+            // 
+            this.button23.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button23.Location = new System.Drawing.Point(1223, 650);
+            this.button23.Name = "button23";
+            this.button23.Size = new System.Drawing.Size(106, 30);
+            this.button23.TabIndex = 56;
+            this.button23.Text = "Quick View";
+            this.button23.UseVisualStyleBackColor = true;
+            this.button23.Click += new System.EventHandler(this.button23_Click);
+            // 
+            // label38
+            // 
+            this.label38.AutoSize = true;
+            this.label38.Font = new System.Drawing.Font("Bookman Old Style", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label38.Location = new System.Drawing.Point(672, 328);
+            this.label38.Name = "label38";
+            this.label38.Size = new System.Drawing.Size(543, 32);
+            this.label38.TabIndex = 58;
+            this.label38.Text = "User Accounts Mangement Dashboard";
+            // 
+            // label39
+            // 
+            this.label39.AutoSize = true;
+            this.label39.Font = new System.Drawing.Font("Bookman Old Style", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label39.Location = new System.Drawing.Point(132, 5);
+            this.label39.Name = "label39";
+            this.label39.Size = new System.Drawing.Size(534, 32);
+            this.label39.TabIndex = 59;
+            this.label39.Text = "Patient Data Management Dashboard";
+            // 
+            // button24
+            // 
+            this.button24.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button24.Location = new System.Drawing.Point(1067, 226);
+            this.button24.Name = "button24";
+            this.button24.Size = new System.Drawing.Size(144, 28);
+            this.button24.TabIndex = 60;
+            this.button24.Text = "Detailed Overal ";
+            this.button24.UseVisualStyleBackColor = true;
+            this.button24.Click += new System.EventHandler(this.button24_Click);
+            // 
+            // button25
+            // 
+            this.button25.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button25.Location = new System.Drawing.Point(530, 232);
+            this.button25.Name = "button25";
+            this.button25.Size = new System.Drawing.Size(85, 30);
+            this.button25.TabIndex = 61;
+            this.button25.Text = "Backup";
+            this.button25.UseVisualStyleBackColor = true;
+            this.button25.Click += new System.EventHandler(this.button25_Click);
+            // 
+            // button26
+            // 
+            this.button26.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button26.Location = new System.Drawing.Point(644, 232);
+            this.button26.Name = "button26";
+            this.button26.Size = new System.Drawing.Size(85, 30);
+            this.button26.TabIndex = 61;
+            this.button26.Text = "Restore";
+            this.button26.UseVisualStyleBackColor = true;
+            this.button26.Click += new System.EventHandler(this.button26_Click);
+            // 
+            // lblLastBackup
+            // 
+            this.lblLastBackup.AutoSize = true;
+            this.lblLastBackup.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLastBackup.ForeColor = System.Drawing.Color.Red;
+            this.lblLastBackup.Location = new System.Drawing.Point(528, 203);
+            this.lblLastBackup.Name = "lblLastBackup";
+            this.lblLastBackup.Size = new System.Drawing.Size(201, 19);
+            this.lblLastBackup.TabIndex = 62;
+            this.lblLastBackup.Text = "Last Backup: Unknown";
             // 
             // Reports
             // 
@@ -966,6 +1109,18 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(70)))), ((int)(((byte)(120)))));
             this.ClientSize = new System.Drawing.Size(1350, 701);
+            this.Controls.Add(this.lblLastBackup);
+            this.Controls.Add(this.button26);
+            this.Controls.Add(this.button25);
+            this.Controls.Add(this.button24);
+            this.Controls.Add(this.label39);
+            this.Controls.Add(this.label38);
+            this.Controls.Add(this.listBox1);
+            this.Controls.Add(this.button23);
+            this.Controls.Add(this.button22);
+            this.Controls.Add(this.button21);
+            this.Controls.Add(this.button20);
+            this.Controls.Add(this.button19);
             this.Controls.Add(this.textBox21);
             this.Controls.Add(this.label37);
             this.Controls.Add(this.dataGridView1);
@@ -1140,5 +1295,17 @@
         private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.Label label37;
         private System.Windows.Forms.TextBox textBox21;
+        private System.Windows.Forms.Button button19;
+        private System.Windows.Forms.Button button20;
+        private System.Windows.Forms.Button button21;
+        private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.Button button22;
+        private System.Windows.Forms.Button button23;
+        private System.Windows.Forms.Label label38;
+        private System.Windows.Forms.Label label39;
+        private System.Windows.Forms.Button button24;
+        private System.Windows.Forms.Button button25;
+        private System.Windows.Forms.Button button26;
+        private System.Windows.Forms.Label lblLastBackup;
     }
 }
