@@ -81,6 +81,9 @@
             this.listBox2 = new System.Windows.Forms.ListBox();
             this.button4 = new System.Windows.Forms.Button();
             this.label23 = new System.Windows.Forms.Label();
+            this.highDependencyUnitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.button5 = new System.Windows.Forms.Button();
+            this.button6 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -188,6 +191,8 @@
             // 
             // accidentAndEmergenceToolStripMenuItem
             // 
+            this.accidentAndEmergenceToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.highDependencyUnitToolStripMenuItem1});
             this.accidentAndEmergenceToolStripMenuItem.Name = "accidentAndEmergenceToolStripMenuItem";
             this.accidentAndEmergenceToolStripMenuItem.Size = new System.Drawing.Size(217, 24);
             this.accidentAndEmergenceToolStripMenuItem.Text = "Accident and Emergence";
@@ -586,7 +591,7 @@
             // button2
             // 
             this.button2.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button2.Location = new System.Drawing.Point(197, 628);
+            this.button2.Location = new System.Drawing.Point(385, 628);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(85, 31);
             this.button2.TabIndex = 16;
@@ -597,7 +602,7 @@
             // button3
             // 
             this.button3.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button3.Location = new System.Drawing.Point(432, 628);
+            this.button3.Location = new System.Drawing.Point(620, 628);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(85, 31);
             this.button3.TabIndex = 18;
@@ -619,7 +624,7 @@
             // button4
             // 
             this.button4.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button4.Location = new System.Drawing.Point(320, 628);
+            this.button4.Location = new System.Drawing.Point(508, 628);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(75, 31);
             this.button4.TabIndex = 17;
@@ -637,12 +642,43 @@
             this.label23.TabIndex = 19;
             this.label23.Text = "Main Capture Dashboard";
             // 
+            // highDependencyUnitToolStripMenuItem1
+            // 
+            this.highDependencyUnitToolStripMenuItem1.Name = "highDependencyUnitToolStripMenuItem1";
+            this.highDependencyUnitToolStripMenuItem1.Size = new System.Drawing.Size(259, 24);
+            this.highDependencyUnitToolStripMenuItem1.Text = "High Dependency Unit";
+            this.highDependencyUnitToolStripMenuItem1.Click += new System.EventHandler(this.highDependencyUnitToolStripMenuItem1_Click);
+            // 
+            // button5
+            // 
+            this.button5.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button5.Location = new System.Drawing.Point(196, 626);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(74, 32);
+            this.button5.TabIndex = 20;
+            this.button5.Text = "Fetch";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
+            // 
+            // button6
+            // 
+            this.button6.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button6.Location = new System.Drawing.Point(290, 627);
+            this.button6.Name = "button6";
+            this.button6.Size = new System.Drawing.Size(76, 32);
+            this.button6.TabIndex = 20;
+            this.button6.Text = "Update";
+            this.button6.UseVisualStyleBackColor = true;
+            this.button6.Click += new System.EventHandler(this.button6_Click);
+            // 
             // Menu
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(70)))), ((int)(((byte)(120)))));
             this.ClientSize = new System.Drawing.Size(1350, 701);
+            this.Controls.Add(this.button6);
+            this.Controls.Add(this.button5);
             this.Controls.Add(this.label23);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.listBox2);
@@ -753,5 +789,8 @@
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.ToolStripMenuItem highDependencyUnitToolStripMenuItem;
         private System.Windows.Forms.Label label23;
+        private System.Windows.Forms.ToolStripMenuItem highDependencyUnitToolStripMenuItem1;
+        private System.Windows.Forms.Button button5;
+        private System.Windows.Forms.Button button6;
     }
 }
