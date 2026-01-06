@@ -339,107 +339,157 @@ namespace MPHBSMS
 
         private void button5_Click_2(object sender, EventArgs e)
         {
+            // 1. INITIALIZE VARIABLES (Fixes 'unassigned local variable' error)
+            DateTime start = DateTime.MinValue;
+            DateTime end = DateTime.MinValue;
+            string currentUser = MPHBSMS.CurrentUser;
 
-            DateTime startDate, endDate;
-
-            // Validate Dates
-            if (!DateTime.TryParse(textBox1.Text, out startDate) ||
-                !DateTime.TryParse(textBox2.Text, out endDate))
+            // 2. VALIDATE DATES
+            if (!DateTime.TryParse(textBox1.Text, out start) || !DateTime.TryParse(textBox2.Text, out end))
             {
-                button1.Enabled = false;
+                MessageBox.Show("Please ensure valid dates are entered in the textboxes before exporting.");
                 return;
             }
 
-            button1.Enabled = true;
-
-            // Ensure both Ward and Category are selected
-            if (comboBox2.SelectedItem == null || comboBox1.SelectedItem == null)
-                return;
-
-            string ward = comboBox2.SelectedItem.ToString();
-            string selectedCategory = comboBox1.SelectedItem.ToString();
-
-            using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+            try
             {
-                try
+                // 3. FOLDER & FILE SETUP
+                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string folderPath = Path.Combine(documentsPath, "Marondera Provincial Hospital Bed Statistics Reports", "Detailed Reports");
+                if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+                string fileName = string.Format("Detailed_Stats_{0}_{1}.pdf",
+                                    start.ToString("yyyyMMdd"),
+                                    DateTime.Now.ToString("HHmmss"));
+                string fullPath = Path.Combine(folderPath, fileName);
+
+                // 4. DATABASE EXTRACTION (Flexible Search Logic)
+                string selectedWard = (comboBox2.SelectedItem != null) ? comboBox2.SelectedItem.ToString() : "";
+                string selectedCat = (comboBox1.SelectedItem != null) ? comboBox1.SelectedItem.ToString() : "";
+
+                DataTable reportData = new DataTable();
+                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    // Use switch to only update the category selected in comboBox1
 
-                    switch (selectedCategory)
+                    // Base Query
+                    string sql = "SELECT [MovementDateTime], [hospitalNumber], [name], [surname], [category], [fromWard], [toWard] " +
+                                 "FROM [tblPatientMovement] " +
+                                 "WHERE ([MovementDateTime] BETWEEN ? AND ?) ";
+
+                    // Optional Ward Filter
+                    if (!string.IsNullOrEmpty(selectedWard))
                     {
-                        case "Admission":
-                            using (OleDbCommand cmd = new OleDbCommand(
-                                "SELECT COUNT(*) FROM tblPatientMaster WHERE currentWard = ? AND isAdmitted = 'Yes'", con))
-                            {
-                                cmd.Parameters.AddWithValue("?", ward);
-                                label5.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                            }
-                            break;
+                        sql += "AND ([fromWard] = ? OR [toWard] = ?) ";
+                    }
+                    // Optional Category Filter
+                    if (!string.IsNullOrEmpty(selectedCat))
+                    {
+                        sql += "AND ([category] = ?) ";
+                    }
 
-                        case "Discharge":
-                            using (OleDbCommand cmd = new OleDbCommand(
-                                "SELECT COUNT(*) FROM tblPatientMaster WHERE currentWard = ? AND isAdmitted = 'No'", con))
-                            {
-                                cmd.Parameters.AddWithValue("?", ward);
-                                label7.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                            }
-                            break;
+                    sql += "ORDER BY [MovementDateTime] DESC";
 
-                        case "InterWardTransferIn":
-                            using (OleDbCommand cmd = new OleDbCommand(
-                                @"SELECT COUNT(*) FROM (
-                SELECT DISTINCT hospitalNumber
-                FROM tblPatientMovement
-                WHERE [category] = 'InterWardTransferIn' AND toWard = ?
-                AND MovementDateTime BETWEEN ? AND ?
-            ) AS TempTable", con)) // Added 'AS TempTable' alias
-                            {
-                                cmd.Parameters.AddWithValue("?", ward);
-                                cmd.Parameters.AddWithValue("?", startDate);
-                                cmd.Parameters.AddWithValue("?", endDate);
-                                label6.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                            }
-                            break;
+                    using (OleDbCommand cmd = new OleDbCommand(sql, con))
+                    {
+                        // Add parameters in the exact order of the '?' marks
+                        cmd.Parameters.AddWithValue("?", start);
+                        cmd.Parameters.AddWithValue("?", end);
 
-                        case "InterWardTransferOut":
-                            using (OleDbCommand cmd = new OleDbCommand(
-                                @"SELECT COUNT(*) FROM (
-                SELECT DISTINCT hospitalNumber
-                FROM tblPatientMovement
-                WHERE [category] = 'InterWardTransferOut' AND fromWard = ?
-                AND MovementDateTime BETWEEN ? AND ?
-            ) AS TempTable", con)) // Added 'AS TempTable' alias
-                            {
-                                cmd.Parameters.AddWithValue("?", ward);
-                                cmd.Parameters.AddWithValue("?", startDate);
-                                cmd.Parameters.AddWithValue("?", endDate);
-                                label8.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                            }
-                            break;
+                        if (!string.IsNullOrEmpty(selectedWard))
+                        {
+                            cmd.Parameters.AddWithValue("?", selectedWard);
+                            cmd.Parameters.AddWithValue("?", selectedWard);
+                        }
+                        if (!string.IsNullOrEmpty(selectedCat))
+                        {
+                            cmd.Parameters.AddWithValue("?", selectedCat);
+                        }
 
-                        case "Death":
-                            using (OleDbCommand cmd = new OleDbCommand(
-                                @"SELECT COUNT(*) FROM tblPatientMaster 
-              WHERE (currentWard = 'Mortuary' OR currentWard = 'Funeral Parlour') 
-              AND isAdmitted = 'No'", con))
-                            {
-                                // Note: Since you hardcoded 'Mortuary' and 'Funeral Parlour', 
-                                // no parameters are needed here.
-                                label9.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                            }
-                            break;
+                        new OleDbDataAdapter(cmd).Fill(reportData);
                     }
                 }
-                catch (Exception ex)
+
+                // 5. PDF GENERATION
+                iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate(), 30f, 30f, 30f, 30f);
+                using (FileStream fs = new FileStream(fullPath, FileMode.Create))
                 {
-                    MessageBox.Show("Error updating category: " + ex.Message);
+                    iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, fs);
+                    doc.Open();
+
+                    // Logo Fix (Centers logo at top)
+                    System.Drawing.Image resImage = Properties.Resources.logo1;
+                    iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(resImage, System.Drawing.Imaging.ImageFormat.Png);
+                    logo.ScaleToFit(75f, 75f);
+                    logo.Alignment = iTextSharp.text.Image.ALIGN_CENTER;
+                    doc.Add(logo);
+
+                    var titleFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 16);
+                    var subFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 11);
+                    var regFont = iTextSharp.text.FontFactory.GetFont("Helvetica", 9);
+
+                    iTextSharp.text.Paragraph head = new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL", titleFont);
+                    head.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    doc.Add(head);
+
+                    iTextSharp.text.Paragraph subHead = new iTextSharp.text.Paragraph("DETAILED PATIENT MOVEMENT & BED STATISTICS", subFont);
+                    subHead.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    doc.Add(subHead);
+
+                    doc.Add(new iTextSharp.text.Paragraph("Period: " + start.ToString("dd/MM/yyyy") + " to " + end.ToString("dd/MM/yyyy") + " | Generated By: " + currentUser, regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+                    // Summary Totals Table
+                    iTextSharp.text.pdf.PdfPTable sumTable = new iTextSharp.text.pdf.PdfPTable(2);
+                    sumTable.WidthPercentage = 40;
+                    sumTable.HorizontalAlignment = iTextSharp.text.Element.ALIGN_LEFT;
+
+                    sumTable.AddCell(new iTextSharp.text.Phrase("Total Records Found:", regFont));
+                    sumTable.AddCell(new iTextSharp.text.Phrase(reportData.Rows.Count.ToString(), regFont));
+                    doc.Add(sumTable);
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+                    // Detailed Log Table
+                    iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(7);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(new float[] { 2f, 1.2f, 2f, 2f, 1.5f, 1.5f, 1.5f });
+
+                    string[] headers = { "Date/Time", "Hosp #", "Name", "Surname", "Category", "From", "To" };
+                    foreach (string h in headers)
+                    {
+                        iTextSharp.text.pdf.PdfPCell cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(h, subFont));
+                        cell.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+                        table.AddCell(cell);
+                    }
+
+                    foreach (DataRow row in reportData.Rows)
+                    {
+                        table.AddCell(new iTextSharp.text.Phrase(Convert.ToDateTime(row["MovementDateTime"]).ToString("dd/MM/yyyy HH:mm"), regFont));
+                        table.AddCell(new iTextSharp.text.Phrase(row["hospitalNumber"].ToString(), regFont));
+                        table.AddCell(new iTextSharp.text.Phrase(row["name"].ToString(), regFont));
+                        table.AddCell(new iTextSharp.text.Phrase(row["surname"].ToString(), regFont));
+                        table.AddCell(new iTextSharp.text.Phrase(row["category"].ToString(), regFont));
+                        table.AddCell(new iTextSharp.text.Phrase(row["fromWard"].ToString(), regFont));
+                        table.AddCell(new iTextSharp.text.Phrase(row["toWard"].ToString(), regFont));
+                    }
+                    doc.Add(table);
+                    doc.Close();
                 }
-                finally
-                {
-                    con.Close();
-                }
+
+                // 6. RESET UI ELEMENTS
+                textBox1.Clear();
+                textBox2.Clear();
+                comboBox1.SelectedIndex = -1;
+                comboBox2.SelectedIndex = -1;
+                label5.Text = "0"; label6.Text = "0"; label7.Text = "0"; label8.Text = "0"; label9.Text = "0";
+
+                // 7. OPEN FILE
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath) { UseShellExecute = true });
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error generating detailed report: " + ex.Message);
+            } 
         }
 
 
@@ -791,109 +841,166 @@ namespace MPHBSMS
 
         private void button7_Click_1(object sender, EventArgs e)
         {
-
-    // 1. Validation
-    if (string.IsNullOrWhiteSpace(textBox3.Text))
-    {
-        MessageBox.Show("Please enter a Hospital Number.", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-    }
-
-    string targetHospNo = textBox3.Text.Trim();
-    string currentUser = MPHBSMS.CurrentUser; 
-
-    try
-    {
-        // 2. FIXED Path Handling - Creating the folder correctly
-        string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        string folderPath = Path.Combine(documentsPath, "Marondera Hospital Patient Files");
-        
-        // Ensure the main folder exists
-        if (!Directory.Exists(folderPath)) 
-        {
-            Directory.CreateDirectory(folderPath);
-        }
-
-        // Remove any slashes or dots from the HospNo that might cause "Path not found"
-        string cleanHospNo = string.Join("_", targetHospNo.Split(Path.GetInvalidFileNameChars()));
-        
-        // Simple filename structure to avoid nested folder errors
-        string fileName = "History_" + cleanHospNo + "_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".pdf";
-        string fullFilePath = Path.Combine(folderPath, fileName);
-
-        // 3. Database Extraction (Same as before)
-        DataTable historyData = new DataTable();
-        using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
-        {
-            string query = "SELECT p.hospitalNumber, p.name, p.surname, p.admissionDate, " +
-                           "m.category, m.MovementDateTime, m.fromWard, m.toWard, m.enteredBy " +
-                           "FROM tblPatientMovement m " +
-                           "INNER JOIN tblPatientMaster p ON m.hospitalNumber = p.hospitalNumber " +
-                           "WHERE p.hospitalNumber = @hospNo " +
-                           "ORDER BY m.MovementDateTime ASC";
-
-            OleDbCommand cmd = new OleDbCommand(query, con);
-            cmd.Parameters.AddWithValue("@hospNo", targetHospNo);
-            OleDbDataAdapter da = new OleDbDataAdapter(cmd);
-            da.Fill(historyData);
-        }
-
-        if (historyData.Rows.Count == 0)
-        {
-            MessageBox.Show("No records found for: " + targetHospNo);
-            return;
-        }
-
-        // 4. Generate PDF
-        iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate());
-        using (FileStream fs = new FileStream(fullFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
-        {
-            iTextSharp.text.pdf.PdfWriter.GetInstance(doc, fs);
-            doc.Open();
-
-            var titleFont = iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD, 14);
-            var regFont = iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA, 10);
-            
-            doc.Add(new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL - PATIENT AUDIT", titleFont));
-            doc.Add(new iTextSharp.text.Paragraph("Report Date: " + DateTime.Now.ToString("F"), regFont));
-            doc.Add(new iTextSharp.text.Paragraph("Generated By: " + currentUser + "\n\n", regFont));
-
-            iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(6);
-            table.WidthPercentage = 100;
-            string[] headers = { "Date", "Category", "From", "To", "Bed Days", "Entered By" };
-            foreach (string h in headers) table.AddCell(new iTextSharp.text.Phrase(h, iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD)));
-
-            int totalDays = 0;
-            DateTime admission = Convert.ToDateTime(historyData.Rows[0]["admissionDate"]);
-
-            foreach (DataRow row in historyData.Rows)
+            // 1. Validation
+            if (string.IsNullOrWhiteSpace(textBox3.Text))
             {
-                DateTime eventDate = Convert.ToDateTime(row["MovementDateTime"]);
-                int days = (eventDate - admission).Days;
-                if (days <= 0) days = 1;
-
-                table.AddCell(eventDate.ToString("g"));
-                table.AddCell(row["category"].ToString());
-                table.AddCell(row["fromWard"].ToString());
-                table.AddCell(row["toWard"].ToString());
-                table.AddCell(days.ToString());
-                table.AddCell(row["enteredBy"].ToString());
-                totalDays = days;
+                MessageBox.Show("Please enter a Hospital Number.", "Marondera Provincial Hospital", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-            doc.Add(table);
-            doc.Add(new iTextSharp.text.Paragraph("\nTotal Cumulative Bed Days: " + totalDays));
-            doc.Close();
-        }
 
-        // 5. Open the File
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullFilePath) { UseShellExecute = true });
-        MPHBSMS.LogActivity("HISTORY VIEW: Generated and opened PDF for Patient " + targetHospNo);
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show("System Error: " + ex.Message);
-    }
+            string targetHospNo = textBox3.Text.Trim().ToUpper();
+            string currentUser = MPHBSMS.CurrentUser;
 
+            try
+            {
+                // 2. FOLDER AND SUBFOLDER HANDLING
+                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string mainFolderPath = Path.Combine(documentsPath, "Marondera Hospital Patient Files");
+                string subFolderPath = Path.Combine(mainFolderPath, "Patient History Report");
+
+                if (!Directory.Exists(mainFolderPath)) Directory.CreateDirectory(mainFolderPath);
+                if (!Directory.Exists(subFolderPath)) Directory.CreateDirectory(subFolderPath);
+
+                string cleanHospNo = string.Join("_", targetHospNo.Split(Path.GetInvalidFileNameChars()));
+                string fileName = "FullAudit_" + cleanHospNo + "_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".pdf";
+                string fullFilePath = Path.Combine(subFolderPath, fileName);
+
+                // 3. Database Extraction
+                DataTable masterData = new DataTable();
+                DataTable historyData = new DataTable();
+
+                using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+                {
+                    con.Open();
+                    string masterQuery = "SELECT * FROM [tblPatientMaster] WHERE [hospitalNumber] = ?";
+                    using (OleDbCommand cmd = new OleDbCommand(masterQuery, con))
+                    {
+                        cmd.Parameters.Add("?", OleDbType.VarChar).Value = targetHospNo;
+                        new OleDbDataAdapter(cmd).Fill(masterData);
+                    }
+
+                    string historyQuery = "SELECT * FROM [tblPatientMovement] WHERE [hospitalNumber] = ? ORDER BY [MovementDateTime] ASC";
+                    using (OleDbCommand cmd = new OleDbCommand(historyQuery, con))
+                    {
+                        cmd.Parameters.Add("?", OleDbType.VarChar).Value = targetHospNo;
+                        new OleDbDataAdapter(cmd).Fill(historyData);
+                    }
+                }
+
+                if (masterData.Rows.Count == 0)
+                {
+                    MessageBox.Show("No record found for Hospital Number: " + targetHospNo);
+                    return;
+                }
+
+                // 4. PDF Generation (Landscape)
+                iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate());
+                using (FileStream fs = new FileStream(fullFilePath, FileMode.Create))
+                {
+                    iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, fs);
+                    doc.Open();
+
+                    // --- WATERMARK ---
+                    iTextSharp.text.pdf.PdfContentByte cb = writer.DirectContentUnder;
+                    iTextSharp.text.pdf.BaseFont bf = iTextSharp.text.pdf.BaseFont.CreateFont(iTextSharp.text.pdf.BaseFont.HELVETICA_BOLD, iTextSharp.text.pdf.BaseFont.CP1252, iTextSharp.text.pdf.BaseFont.NOT_EMBEDDED);
+                    cb.BeginText();
+                    cb.SetFontAndSize(bf, 55);
+                    cb.SetColorFill(new iTextSharp.text.BaseColor(230, 230, 230));
+                    cb.ShowTextAligned(iTextSharp.text.Element.ALIGN_CENTER, "OFFICIAL PATIENT AUDIT", doc.PageSize.Width / 2, doc.PageSize.Height / 2, 35);
+                    cb.EndText();
+
+                    // --- LOGO LOGIC (Using Resources) ---
+                    // By adding the logo directly to 'doc' without AbsolutePosition, 
+                    // the text will automatically start BELOW it.
+                    System.Drawing.Image resImage = Properties.Resources.logo1;
+                    iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(resImage, System.Drawing.Imaging.ImageFormat.Png);
+                    logo.ScaleToFit(70f, 70f);
+                    logo.Alignment = iTextSharp.text.Image.ALIGN_CENTER; // Center the logo
+                    doc.Add(logo);
+
+                    // Fonts
+                    var titleFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 16);
+                    var regFont = iTextSharp.text.FontFactory.GetFont("Helvetica", 10);
+                    var tableHeaderFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 9);
+                    var smallFont = iTextSharp.text.FontFactory.GetFont("Helvetica", 8);
+
+                    // Header Title (Now appears below image)
+                    iTextSharp.text.Paragraph header = new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL - FULL AUDIT REPORT", titleFont);
+                    header.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    doc.Add(header);
+
+                    doc.Add(new iTextSharp.text.Paragraph("Report Date: " + DateTime.Now.ToString("F"), regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("Generated By: " + currentUser, regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+                    // SECTION 1: MASTER DATA
+                    DataRow mRow = masterData.Rows[0];
+                    iTextSharp.text.pdf.PdfPTable masterTable = new iTextSharp.text.pdf.PdfPTable(4);
+                    masterTable.WidthPercentage = 100;
+                    masterTable.DefaultCell.Border = iTextSharp.text.Rectangle.NO_BORDER;
+
+                    masterTable.AddCell(new iTextSharp.text.Phrase("Hospital No:", tableHeaderFont));
+                    masterTable.AddCell(new iTextSharp.text.Phrase(mRow["hospitalNumber"].ToString(), regFont));
+                    masterTable.AddCell(new iTextSharp.text.Phrase("Patient Name:", tableHeaderFont));
+                    masterTable.AddCell(new iTextSharp.text.Phrase(mRow["name"].ToString() + " " + mRow["surname"].ToString(), regFont));
+                    doc.Add(masterTable);
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+                    // SECTION 2: HISTORY TABLE (10 Columns)
+                    iTextSharp.text.pdf.PdfPTable historyTable = new iTextSharp.text.pdf.PdfPTable(10);
+                    historyTable.WidthPercentage = 100;
+                    string[] headers = { "Hosp No", "Name", "Surname", "Gender", "Movement Date", "To Ward", "From Ward", "Category", "Entered By", "ID" };
+
+                    foreach (string h in headers)
+                    {
+                        iTextSharp.text.pdf.PdfPCell cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(h, tableHeaderFont));
+                        cell.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+                        cell.HorizontalAlignment = iTextSharp.text.Element.ALIGN_CENTER;
+                        historyTable.AddCell(cell);
+                    }
+
+                    foreach (DataRow row in historyData.Rows)
+                    {
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["hospitalNumber"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["name"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["surname"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["gender"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["MovementDateTime"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["toWard"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["fromWard"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["category"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["enteredBy"].ToString(), smallFont));
+                        historyTable.AddCell(new iTextSharp.text.Phrase(row["movementID"].ToString(), smallFont));
+                    }
+                    doc.Add(historyTable);
+
+                    // SECTION 3: BED DAYS
+                    doc.Add(new iTextSharp.text.Paragraph("\n" + new string('-', 140), regFont));
+
+                    DateTime admDate;
+                    if (DateTime.TryParse(mRow["admissionDate"].ToString(), out admDate))
+                    {
+                        DateTime endDate = DateTime.Now;
+                        if (mRow["isAdmitted"].ToString().ToLower() == "no")
+                        {
+                            DateTime.TryParse(mRow["dischargeDate"].ToString(), out endDate);
+                        }
+                        TimeSpan span = endDate - admDate;
+                        int totalBedDays = Math.Max(1, (int)Math.Ceiling(span.TotalDays));
+                        doc.Add(new iTextSharp.text.Paragraph("TOTAL CUMULATIVE BED DAYS: " + totalBedDays, titleFont));
+                    }
+
+                    // SIGNATURE
+                    doc.Add(new iTextSharp.text.Paragraph("\n\n\n___________________________\nAuthorized Signature\nHealth Information Department", smallFont));
+
+                    doc.Close();
+                }
+
+                // Open file
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullFilePath) { UseShellExecute = true });
+                MPHBSMS.LogActivity("AUDIT REPORT: Generated for Hospital No " + targetHospNo);
+            }
+            catch (Exception ex) { MessageBox.Show("Critical Error: " + ex.Message); }
         }
 
         private void button18_Click(object sender, EventArgs e)
@@ -924,7 +1031,6 @@ namespace MPHBSMS
 
         private void button20_Click(object sender, EventArgs e)
         {
-
             DateTime startDate, endDate;
 
             // Validate Dates
@@ -943,60 +1049,56 @@ namespace MPHBSMS
                 {
                     con.Open();
 
-                    // 1. Total Admissions (All Wards)
+                    // 1. Total Admissions (Within Date Range)
+                    // Uses tblPatientMovement to find when category was set to 'Admission'
                     using (OleDbCommand cmd = new OleDbCommand(
-                        "SELECT COUNT(*) FROM tblPatientMaster WHERE isAdmitted = 'Yes'", con))
-                    {
-                        label5.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                    }
-
-                    // 2. Total Discharges (All Wards)
-                    using (OleDbCommand cmd = new OleDbCommand(
-                        "SELECT COUNT(*) FROM tblPatientMaster WHERE isAdmitted = 'No'", con))
-                    {
-                        label7.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
-                    }
-
-                    // 3. Total Inter-Ward Transfers IN (All Wards) within Date Range
-                    using (OleDbCommand cmd = new OleDbCommand(
-                        @"SELECT COUNT(*) FROM (
-                SELECT DISTINCT hospitalNumber 
-                FROM tblPatientMovement 
-                WHERE [category] = 'InterWardTransferIn' 
-                AND MovementDateTime BETWEEN ? AND ?
-            ) AS TempTable", con))
+                        "SELECT COUNT(*) FROM tblPatientMovement WHERE [category] = 'Admission' AND MovementDateTime BETWEEN ? AND ?", con))
                     {
                         cmd.Parameters.AddWithValue("?", startDate);
                         cmd.Parameters.AddWithValue("?", endDate);
-                        label6.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
+                        label5.Text = cmd.ExecuteScalar().ToString();
                     }
 
-                    // 4. Total Inter-Ward Transfers OUT (All Wards) within Date Range
+                    // 2. Total Discharges (Within Date Range)
                     using (OleDbCommand cmd = new OleDbCommand(
-                        @"SELECT COUNT(*) FROM (
-                SELECT DISTINCT hospitalNumber 
-                FROM tblPatientMovement 
-                WHERE [category] = 'InterWardTransferOut' 
-                AND MovementDateTime BETWEEN ? AND ?
-            ) AS TempTable", con))
+                        "SELECT COUNT(*) FROM tblPatientMovement WHERE [category] = 'Discharge' AND MovementDateTime BETWEEN ? AND ?", con))
                     {
                         cmd.Parameters.AddWithValue("?", startDate);
                         cmd.Parameters.AddWithValue("?", endDate);
-                        label8.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
+                        label7.Text = cmd.ExecuteScalar().ToString();
                     }
 
-                    // 5. Total Deaths (Mortuary/Funeral Parlour)
+                    // 3. Total Inter-Ward Transfers IN (Within Date Range)
                     using (OleDbCommand cmd = new OleDbCommand(
-                        @"SELECT COUNT(*) FROM tblPatientMaster 
-              WHERE (currentWard = 'Mortuary' OR currentWard = 'Funeral Parlour') 
-              AND isAdmitted = 'No'", con))
+                        "SELECT COUNT(*) FROM tblPatientMovement WHERE [category] = 'InterWardTransferIn' AND MovementDateTime BETWEEN ? AND ?", con))
                     {
-                        label9.Text = Convert.ToInt32(cmd.ExecuteScalar()).ToString();
+                        cmd.Parameters.AddWithValue("?", startDate);
+                        cmd.Parameters.AddWithValue("?", endDate);
+                        label6.Text = cmd.ExecuteScalar().ToString();
+                    }
+
+                    // 4. Total Inter-Ward Transfers OUT (Within Date Range)
+                    using (OleDbCommand cmd = new OleDbCommand(
+                        "SELECT COUNT(*) FROM tblPatientMovement WHERE [category] = 'InterWardTransferOut' AND MovementDateTime BETWEEN ? AND ?", con))
+                    {
+                        cmd.Parameters.AddWithValue("?", startDate);
+                        cmd.Parameters.AddWithValue("?", endDate);
+                        label8.Text = cmd.ExecuteScalar().ToString();
+                    }
+
+                    // 5. Total Deaths (Based on Movement Records within range)
+                    // This is more accurate than checking currentWard in PatientMaster
+                    using (OleDbCommand cmd = new OleDbCommand(
+                        "SELECT COUNT(*) FROM tblPatientMovement WHERE [category] = 'Death' AND MovementDateTime BETWEEN ? AND ?", con))
+                    {
+                        cmd.Parameters.AddWithValue("?", startDate);
+                        cmd.Parameters.AddWithValue("?", endDate);
+                        label9.Text = cmd.ExecuteScalar().ToString();
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error calculating total statistics: " + ex.Message);
+                    MessageBox.Show("Error calculating total statistics: " + ex.Message); //
                 }
             }
         }
@@ -1005,103 +1107,128 @@ namespace MPHBSMS
         {
             string enteredBy = MPHBSMS.CurrentUser;
 
-            // 1. Get the values from your textboxes/labels
+            // 1. Get values and call method
             string start = textBox1.Text;
             string end = textBox2.Text;
-            string user = enteredBy; // You can replace this with your actual user variable
+            string user = enteredBy;
 
-            // 2. Call the method (this "triggers" the PDF generation)
             ExportSummaryToPDF(start, end, user);
         }
+public void ExportSummaryToPDF(string startDateStr, string endDateStr, string currentUser)
+{
+    try
+    {
+        // 1. FOLDER HANDLING
+        string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        string mainFolderName = "Marondera Provincial Hospital Bed Statistics Reports";
+        string subFolderName = "General Statistics";
+        
+        string mainPath = Path.Combine(documentsPath, mainFolderName);
+        string subPath = Path.Combine(mainPath, subFolderName);
 
-        // THIS METHOD MUST BE OUTSIDE THE BUTTON CLICK
-        public void ExportSummaryToPDF(string startDateStr, string endDateStr, string currentUser)
-        {
-            try
-            {
-                // 1. Folder check/creation
-                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                string folderName = "Marondera Provincial Hospital Bed Statistics Reports";
-                string fullFolderPath = Path.Combine(documentsPath, folderName);
+        if (!Directory.Exists(mainPath)) Directory.CreateDirectory(mainPath);
+        if (!Directory.Exists(subPath)) Directory.CreateDirectory(subPath);
 
-                if (!Directory.Exists(fullFolderPath))
-                {
-                    Directory.CreateDirectory(fullFolderPath);
-                }
+        // 2. BUILD FILENAME
+        DateTime start = DateTime.Parse(startDateStr);
+        DateTime end = DateTime.Parse(endDateStr);
 
-                // 2. Build Filename and Path with unique timestamp
-                DateTime start = DateTime.Parse(startDateStr);
-                DateTime end = DateTime.Parse(endDateStr);
+        string desiredBaseName = string.Format("Stats_{0}_to_{1}_{2}",
+                                    start.ToString("yyyy-MM-dd"),
+                                    end.ToString("yyyy-MM-dd"),
+                                    DateTime.Now.ToString("HHmmss"));
 
-                // Added HHmmss to ensure uniqueness even if generated in the same minute
-                string desiredBaseName = string.Format("Report_{0}_to_{1}_{2}",
-                                            start.ToString("yyyy-MM-dd"),
-                                            end.ToString("yyyy-MM-dd"),
-                                            DateTime.Now.ToString("HHmmss"));
+        string fullFilePath = Path.Combine(subPath, desiredBaseName + ".pdf");
 
-                string fullFilePath = FilePathHelper.BuildSafeFilePath(fullFolderPath, desiredBaseName, ".pdf");
+        // 3. CREATE DOCUMENT
+        iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 30f, 30f, 30f, 30f);
+        iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, new FileStream(fullFilePath, FileMode.Create));
+        
+        doc.Open();
 
+        // --- WATERMARK ---
+        iTextSharp.text.pdf.PdfContentByte cb = writer.DirectContentUnder;
+        iTextSharp.text.pdf.BaseFont bf = iTextSharp.text.pdf.BaseFont.CreateFont(iTextSharp.text.pdf.BaseFont.HELVETICA_BOLD, iTextSharp.text.pdf.BaseFont.CP1252, iTextSharp.text.pdf.BaseFont.NOT_EMBEDDED);
+        cb.BeginText();
+        cb.SetFontAndSize(bf, 45);
+        cb.SetColorFill(new iTextSharp.text.BaseColor(235, 235, 235)); 
+        cb.ShowTextAligned(iTextSharp.text.Element.ALIGN_CENTER, "OFFICIAL BED STATISTICS REPORT", doc.PageSize.Width / 2, doc.PageSize.Height / 2, 45);
+        cb.EndText();
 
+        // --- LOGO (Fix: Internal Resource to avoid missing file errors) ---
+        // Pulling directly from Resources.resx as seen in your project
+        System.Drawing.Image resImage = Properties.Resources.logo1;
+        iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(resImage, System.Drawing.Imaging.ImageFormat.Png);
+        logo.ScaleToFit(80f, 80f);
+        logo.Alignment = iTextSharp.text.Image.ALIGN_CENTER; 
+        doc.Add(logo); // Fix: Adding directly prevents text overlap
 
-                // 3. Create Document
-                iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 30f, 30f, 30f, 30f);
-                iTextSharp.text.pdf.PdfWriter.GetInstance(doc, new FileStream(fullFilePath, FileMode.Create));
-                doc.Open();
+        // --- HEADER ---
+        var titleFont = iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD, 16);
+        var subFont = iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD, 12);
+        
+        iTextSharp.text.Paragraph header = new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL", titleFont);
+        header.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+        doc.Add(header);
 
-                // --- HEADER ---
-                iTextSharp.text.Paragraph header = new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL", iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD, 16));
-                header.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
-                doc.Add(header);
+        iTextSharp.text.Paragraph dept = new iTextSharp.text.Paragraph("DEPARTMENT: HEALTH INFORMATION", subFont);
+        dept.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+        doc.Add(dept);
+        doc.Add(new iTextSharp.text.Paragraph("\n"));
 
-                iTextSharp.text.Paragraph dept = new iTextSharp.text.Paragraph("DEPARTMENT: HEALTH INFORMATION", iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD, 12));
-                dept.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
-                doc.Add(dept);
-                doc.Add(new iTextSharp.text.Paragraph("\n"));
+        // --- METADATA (No $ Interpolation used here) ---
+        doc.Add(new iTextSharp.text.Paragraph(string.Format("Generation Date: {0}", DateTime.Now.ToString("F"))));
+        doc.Add(new iTextSharp.text.Paragraph(string.Format("Generated By: {0}", currentUser)));
+        doc.Add(new iTextSharp.text.Paragraph(string.Format("Reporting Period: {0} to {1}", start.ToString("dd/MM/yyyy"), end.ToString("dd/MM/yyyy"))));
 
-                // --- METADATA ---
-                doc.Add(new iTextSharp.text.Paragraph(string.Format("Generation Date: {0}", DateTime.Now.ToString("F"))));
-                doc.Add(new iTextSharp.text.Paragraph(string.Format("Generated By: {0}", currentUser)));
-                doc.Add(new iTextSharp.text.Paragraph(string.Format("Period: {0} to {1}", start.ToString("dd/MM/yyyy"), end.ToString("dd/MM/yyyy"))));
+        string selectedWard = (comboBox2.SelectedItem != null) ? comboBox2.SelectedItem.ToString() : "Hospital-Wide";
+        doc.Add(new iTextSharp.text.Paragraph(string.Format("Ward Scope: {0}", selectedWard)));
+        doc.Add(new iTextSharp.text.Paragraph("\n" + new string('-', 85) + "\n\n"));
 
-                string selectedWard = (comboBox2.SelectedItem != null) ? comboBox2.SelectedItem.ToString() : "All Wards";
-                doc.Add(new iTextSharp.text.Paragraph(string.Format("Ward: {0}", selectedWard)));
-                doc.Add(new iTextSharp.text.Paragraph("\n" + new string('-', 85) + "\n\n"));
+        // --- DATA TABLE (Populated with current calculated totals) ---
+        iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(2);
+        table.WidthPercentage = 100;
+        table.SetWidths(new float[] { 3f, 1.5f });
 
-                // --- TABLE ---
-                iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(2);
-                table.WidthPercentage = 100;
-                table.SetWidths(new float[] { 3f, 1.5f });
+        var hFont = iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD, 11);
+        
+        // Header Cells
+        iTextSharp.text.pdf.PdfPCell hCell1 = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Category", hFont));
+        hCell1.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+        hCell1.Padding = 6;
+        table.AddCell(hCell1);
 
-                iTextSharp.text.pdf.PdfPCell cell1 = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Category", iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD)));
-                cell1.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
-                table.AddCell(cell1);
+        iTextSharp.text.pdf.PdfPCell hCell2 = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Total Count", hFont));
+        hCell2.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+        hCell2.Padding = 6;
+        table.AddCell(hCell2);
 
-                iTextSharp.text.pdf.PdfPCell cell2 = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Data Generated (Total)", iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_BOLD)));
-                cell2.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
-                table.AddCell(cell2);
+        // Populate from labels (Ensure statistics are updated first)
+        table.AddCell("Total Admissions"); table.AddCell(label5.Text);
+        table.AddCell("Total Discharges"); table.AddCell(label7.Text);
+        table.AddCell("Total Inter-Ward Transfers In"); table.AddCell(label6.Text);
+        table.AddCell("Total Inter-Ward Transfers Out"); table.AddCell(label8.Text);
+        table.AddCell("Total Deaths Recorded"); table.AddCell(label9.Text);
 
-                table.AddCell("Admissions"); table.AddCell(label5.Text);
-                table.AddCell("Discharges"); table.AddCell(label7.Text);
-                table.AddCell("Inter-Ward Transfers In"); table.AddCell(label6.Text);
-                table.AddCell("Inter-Ward Transfers Out"); table.AddCell(label8.Text);
-                table.AddCell("Deaths (Mortuary/Funeral)"); table.AddCell(label9.Text);
+        doc.Add(table);
 
-                doc.Add(table);
+        // --- SIGNATURE SECTION ---
+        doc.Add(new iTextSharp.text.Paragraph("\n\n\n"));
+        iTextSharp.text.Paragraph sig = new iTextSharp.text.Paragraph("___________________________\nAuthorized Signature\nHealth Information Department");
+        sig.Alignment = iTextSharp.text.Element.ALIGN_RIGHT;
+        doc.Add(sig);
 
-                // --- SIGNATURE ---
-                doc.Add(new iTextSharp.text.Paragraph("\n\n\n"));
-                iTextSharp.text.Paragraph sig = new iTextSharp.text.Paragraph("___________________________\nAuthorized Signature\nHealth Information Department");
-                sig.Alignment = iTextSharp.text.Element.ALIGN_RIGHT;
-                doc.Add(sig);
+        doc.Close();
 
-                doc.Close();
-                System.Diagnostics.Process.Start(fullFilePath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(string.Format("Error: {0}", ex.Message), "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        // 5. Open file automatically
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullFilePath) { UseShellExecute = true });
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(string.Format("Error: {0}", ex.Message), "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -1146,112 +1273,147 @@ namespace MPHBSMS
 
         private void button21_Click(object sender, EventArgs e)
         {
-            dataGridView1.DataSource = null;
-
-            // Validation: Check ListBox and Search Box
-            if (listBox1.SelectedItem == null || string.IsNullOrEmpty(textBox19.Text))
-            {
-                MessageBox.Show("Select a log file and enter an ID/Username to search.", "Marondera Provincial Hospital");
-                return;
-            }
-
-            string inputSearch = textBox19.Text.Trim();
-            string idMatch = "", nameMatch = "", surnameMatch = "";
-
-            // 1. DATABASE LOOKUP: Find all identifiers for this person
             try
             {
+                // 1. DATA VALIDATION & FOLDER SETUP
+                DateTime start, end;
+                if (!DateTime.TryParse(textBox1.Text, out start) || !DateTime.TryParse(textBox2.Text, out end))
+                {
+                    MessageBox.Show("Please ensure valid dates are entered in the textboxes before exporting.");
+                    return;
+                }
+
+                string currentUser = MPHBSMS.CurrentUser;
+                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string mainPath = Path.Combine(documentsPath, "Marondera Provincial Hospital Bed Statistics Reports");
+                string subPath = Path.Combine(mainPath, "General Statistics");
+
+                if (!Directory.Exists(mainPath)) Directory.CreateDirectory(mainPath);
+                if (!Directory.Exists(subPath)) Directory.CreateDirectory(subPath);
+
+                // Build Filename using string.Format (No $ interpolation)
+                string fileName = string.Format("Stats_{0}_to_{1}_{2}.pdf",
+                                    start.ToString("yyyy-MM-dd"),
+                                    end.ToString("yyyy-MM-dd"),
+                                    DateTime.Now.ToString("HHmmss"));
+
+                string fullFilePath = Path.Combine(subPath, fileName);
+
+                // 2. DATABASE CALCULATION LOGIC
+                // We calculate fresh totals directly before generating the PDF to ensure accuracy
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
                     con.Open();
-                    string sql = "SELECT idNumber, name, surname FROM userAccounts WHERE idNumber = ? OR name = ? OR surname = ?";
-                    using (OleDbCommand cmd = new OleDbCommand(sql, con))
-                    {
-                        cmd.Parameters.AddWithValue("?", inputSearch);
-                        cmd.Parameters.AddWithValue("?", inputSearch);
-                        cmd.Parameters.AddWithValue("?", inputSearch);
+                    // Using tblPatientMovement for accurate historical reporting
+                    string[] categories = { "Admission", "Discharge", "InterWardTransferIn", "InterWardTransferOut", "Death" };
+                    string[] counts = new string[5];
 
-                        using (OleDbDataReader dr = cmd.ExecuteReader())
+                    for (int i = 0; i < categories.Length; i++)
+                    {
+                        // Using brackets [] for Access SQL safety and positional ? parameters
+                        string sql = "SELECT COUNT(*) FROM [tblPatientMovement] WHERE [category] = ? AND [MovementDateTime] BETWEEN ? AND ?";
+                        using (OleDbCommand cmd = new OleDbCommand(sql, con))
                         {
-                            if (dr.Read())
-                            {
-                                idMatch = dr["idNumber"].ToString();
-                                nameMatch = dr["name"].ToString();
-                                surnameMatch = dr["surname"].ToString();
-                            }
-                            else { idMatch = inputSearch; }
+                            cmd.Parameters.AddWithValue("?", categories[i]);
+                            cmd.Parameters.AddWithValue("?", start);
+                            cmd.Parameters.AddWithValue("?", end);
+                            counts[i] = cmd.ExecuteScalar().ToString();
                         }
                     }
+
+                    // Sync form labels with the new data
+                    label5.Text = counts[0]; // Admissions
+                    label7.Text = counts[1]; // Discharges
+                    label6.Text = counts[2]; // Transfer In
+                    label8.Text = counts[3]; // Transfer Out
+                    label9.Text = counts[4]; // Deaths
                 }
-            }
-            catch (Exception ex) { MessageBox.Show("Database identity sync failed: " + ex.Message); }
 
-            // 2. FILE & CATEGORY PREPARATION
-            string selectedFile = listBox1.SelectedItem.ToString();
-            string sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, selectedFile);
-            string reportPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Unified_Extract_" + idMatch + ".txt");
-
-            // Track totals based on your snapshot categories
-            int countAdm = 0, countTransIn = 0, countDis = 0, countTransOut = 0, countDth = 0;
-
-            try
-            {
-                string[] lines = File.ReadAllLines(sourcePath);
-                System.Collections.Generic.List<string> matches = new System.Collections.Generic.List<string>();
-
-                matches.Add("UNIFIED LOG REPORT FOR: " + nameMatch + " " + surnameMatch + " (ID: " + idMatch + ")");
-                matches.Add("Generated on: " + DateTime.Now.ToString("F"));
-                matches.Add("--------------------------------------------------");
-
-                // 3. MULTI-KEY SCAN & CATEGORY COUNTING
-                foreach (string singleLine in lines)
+                // 3. PDF GENERATION
+                iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 30f, 30f, 30f, 30f);
+                using (FileStream fs = new FileStream(fullFilePath, FileMode.Create))
                 {
-                    bool isMatch = false;
-                    if (!string.IsNullOrEmpty(idMatch) && singleLine.Contains(idMatch)) isMatch = true;
-                    if (!string.IsNullOrEmpty(nameMatch) && singleLine.Contains(nameMatch)) isMatch = true;
-                    if (!string.IsNullOrEmpty(surnameMatch) && singleLine.Contains(surnameMatch)) isMatch = true;
+                    iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, fs);
+                    doc.Open();
 
-                    if (isMatch)
-                    {
-                        matches.Add(singleLine);
+                    // --- WATERMARK ---
+                    iTextSharp.text.pdf.PdfContentByte cb = writer.DirectContentUnder;
+                    iTextSharp.text.pdf.BaseFont bf = iTextSharp.text.pdf.BaseFont.CreateFont(iTextSharp.text.pdf.BaseFont.HELVETICA_BOLD, iTextSharp.text.pdf.BaseFont.CP1252, iTextSharp.text.pdf.BaseFont.NOT_EMBEDDED);
+                    cb.BeginText();
+                    cb.SetFontAndSize(bf, 45);
+                    cb.SetColorFill(new iTextSharp.text.BaseColor(240, 240, 240));
+                    cb.ShowTextAligned(iTextSharp.text.Element.ALIGN_CENTER, "OFFICIAL BED STATISTICS", doc.PageSize.Width / 2, doc.PageSize.Height / 2, 45);
+                    cb.EndText();
 
-                        // Increment totals based on keywords in the action
-                        string lowerLine = singleLine.ToLower();
-                        if (lowerLine.Contains("admission")) countAdm++;
-                        else if (lowerLine.Contains("transfer in")) countTransIn++;
-                        else if (lowerLine.Contains("discharge")) countDis++;
-                        else if (lowerLine.Contains("transfer out")) countTransOut++;
-                        else if (lowerLine.Contains("death")) countDth++;
-                    }
+                    // --- LOGO (Alignment centered avoids text overlap) ---
+                    System.Drawing.Image resImage = Properties.Resources.logo1;
+                    iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(resImage, System.Drawing.Imaging.ImageFormat.Png);
+                    logo.ScaleToFit(85f, 85f);
+                    logo.Alignment = iTextSharp.text.Image.ALIGN_CENTER;
+                    doc.Add(logo);
+
+                    // --- FONTS ---
+                    var titleFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 16);
+                    var subFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 12);
+                    var regFont = iTextSharp.text.FontFactory.GetFont("Helvetica", 10);
+
+                    // --- HEADERS ---
+                    iTextSharp.text.Paragraph h1 = new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL", titleFont);
+                    h1.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    doc.Add(h1);
+
+                    iTextSharp.text.Paragraph h2 = new iTextSharp.text.Paragraph("HEALTH INFORMATION DEPARTMENT - STATISTICS SUMMARY", subFont);
+                    h2.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    doc.Add(h2);
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+                    // --- METADATA (String concatenation only) ---
+                    doc.Add(new iTextSharp.text.Paragraph("Report Date: " + DateTime.Now.ToString("F"), regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("Generated By: " + currentUser, regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("Reporting Period: " + start.ToString("dd/MM/yyyy") + " to " + end.ToString("dd/MM/yyyy"), regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("\n" + new string('-', 90) + "\n\n", regFont));
+
+                    // --- DATA TABLE ---
+                    iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(2);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(new float[] { 3.5f, 1.5f });
+
+                    // Table Header Cells
+                    iTextSharp.text.pdf.PdfPCell c1 = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Statistical Category", subFont));
+                    c1.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+                    c1.Padding = 8;
+                    table.AddCell(c1);
+
+                    iTextSharp.text.pdf.PdfPCell c2 = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase("Total Count", subFont));
+                    c2.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+                    c2.Padding = 8;
+                    table.AddCell(c2);
+
+                    // Adding data rows
+                    table.AddCell("Total Admissions"); table.AddCell(label5.Text);
+                    table.AddCell("Total Discharges"); table.AddCell(label7.Text);
+                    table.AddCell("Total Inter-Ward Transfers In"); table.AddCell(label6.Text);
+                    table.AddCell("Total Inter-Ward Transfers Out"); table.AddCell(label8.Text);
+                    table.AddCell("Total Deaths Recorded"); table.AddCell(label9.Text);
+
+                    doc.Add(table);
+
+                    // --- SIGNATURE SECTION ---
+                    doc.Add(new iTextSharp.text.Paragraph("\n\n\n\n"));
+                    iTextSharp.text.Paragraph sig = new iTextSharp.text.Paragraph("___________________________\nAuthorized Signature\nRecords Office", regFont);
+                    sig.Alignment = iTextSharp.text.Element.ALIGN_RIGHT;
+                    doc.Add(sig);
+
+                    doc.Close();
                 }
 
-                // 4. ADD SUMMARY TABLE AT THE BOTTOM (Mirroring Snapshot)
-                matches.Add("\n--------------------------------------------------");
-                matches.Add("STATISTICAL SUMMARY BY CATEGORY");
-                matches.Add("--------------------------------------------------");
-                matches.Add(string.Format("{0,-25} | {1}", "Total Admissions:", countAdm));
-                matches.Add(string.Format("{0,-25} | {1}", "Total Transfers In:", countTransIn));
-                matches.Add(string.Format("{0,-25} | {1}", "Total Discharges:", countDis));
-                matches.Add(string.Format("{0,-25} | {1}", "Total Transfers Out:", countTransOut));
-                matches.Add(string.Format("{0,-25} | {1}", "Total Deaths:", countDth));
-                matches.Add("--------------------------------------------------");
-                matches.Add("TOTAL ACTIONS: " + (countAdm + countTransIn + countDis + countTransOut + countDth));
-
-                // 5. EXPORT AND OPEN
-                if (matches.Count > 10) // Check if any actual data matches were found
-                {
-                    File.WriteAllLines(reportPath, matches.ToArray());
-                    System.Diagnostics.Process.Start("notepad.exe", reportPath);
-                    MPHBSMS.LogActivity("AUDIT: Exported unified log with Category Summary for " + idMatch);
-                }
-                else
-                {
-                    MessageBox.Show("No records found for this identity in the selected log.");
-                }
+                // 4. AUTO-OPEN THE FINAL REPORT
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullFilePath) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
-                MessageBox.Show("File Error: " + ex.Message);
+                // Concatenation used for error message
+                MessageBox.Show("Export Error: " + ex.Message);
             }
         }
 
@@ -1260,7 +1422,7 @@ namespace MPHBSMS
             dataGridView1.DataSource = null;
             try
             {
-                // 1. Validation for ListBox and Search Input
+                // 1. Validation
                 if (listBox1.SelectedItem == null || string.IsNullOrWhiteSpace(textBox19.Text))
                 {
                     MessageBox.Show("Please select a log file and enter an ID/Name to filter.", "Marondera Provincial Hospital");
@@ -1271,7 +1433,7 @@ namespace MPHBSMS
                 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
                 string inputSearch = textBox19.Text.Trim();
 
-                // 2. IDENTITY SYNC: Fetch all identifiers for the user
+                // 2. Identity Sync (Database Lookup)
                 string idMatch = "", nameMatch = "", surnameMatch = "";
                 using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
                 {
@@ -1295,78 +1457,238 @@ namespace MPHBSMS
                     }
                 }
 
-                // 3. PREPARE TRACKING AND GRID
-                // Dictionary to store Category Name and Count
-                System.Collections.Generic.Dictionary<string, int> categoryTotals = new System.Collections.Generic.Dictionary<string, int>();
+                // 3. Prepare PDF Path
+                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string subFolder = Path.Combine(documentsPath, "Marondera Hospital Patient Files", "User Audit Reports");
+                if (!Directory.Exists(subFolder)) Directory.CreateDirectory(subFolder);
+                string pdfName = "AuditLog_" + idMatch + "_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".pdf";
+                string fullPath = Path.Combine(subFolder, pdfName);
 
-                dataGridView1.Rows.Clear();
-                if (dataGridView1.Columns.Count == 0)
+                // 4. PDF Generation
+                iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate()); // Rotate for better space
+                using (FileStream fs = new FileStream(fullPath, FileMode.Create))
                 {
-                    dataGridView1.Columns.Add("Date", "Date & Time");
-                    dataGridView1.Columns.Add("User", "Identity Found");
-                    dataGridView1.Columns.Add("Action", "Activity Logged");
-                }
+                    iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, fs);
+                    doc.Open();
 
-                // 4. PARSE AND FILTER LOGS
-                string[] lines = File.ReadAllLines(filePath);
-                foreach (string line in lines)
-                {
-                    bool isUserAction = false;
-                    if (!string.IsNullOrEmpty(idMatch) && line.Contains(idMatch)) isUserAction = true;
-                    if (!string.IsNullOrEmpty(nameMatch) && line.Contains(nameMatch)) isUserAction = true;
-                    if (!string.IsNullOrEmpty(surnameMatch) && line.Contains(surnameMatch)) isUserAction = true;
+                    // --- Watermark ---
+                    iTextSharp.text.pdf.PdfContentByte cb = writer.DirectContentUnder;
+                    iTextSharp.text.pdf.BaseFont bf = iTextSharp.text.pdf.BaseFont.CreateFont(iTextSharp.text.pdf.BaseFont.HELVETICA_BOLD, iTextSharp.text.pdf.BaseFont.CP1252, iTextSharp.text.pdf.BaseFont.NOT_EMBEDDED);
+                    cb.BeginText();
+                    cb.SetFontAndSize(bf, 50);
+                    cb.SetColorFill(new iTextSharp.text.BaseColor(240, 240, 240));
+                    cb.ShowTextAligned(iTextSharp.text.Element.ALIGN_CENTER, "SECURITY AUDIT LOG", doc.PageSize.Width / 2, doc.PageSize.Height / 2, 45);
+                    cb.EndText();
 
-                    if (isUserAction)
+                    // --- Logo (logo.jpg) ---
+                    string logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.jpg");
+                    if (File.Exists(logoPath))
                     {
-                        string[] parts = line.Split('|');
-                        if (parts.Length >= 3)
+                        iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(logoPath);
+                        logo.ScaleToFit(70f, 70f);
+                        logo.SetAbsolutePosition(35f, doc.PageSize.Height - 85f);
+                        doc.Add(logo);
+                    }
+
+                    // Fonts
+                    var titleFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 16);
+                    var regFont = iTextSharp.text.FontFactory.GetFont("Helvetica", 10);
+                    var tableHeaderFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 10);
+
+                    doc.Add(new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL", titleFont));
+                    doc.Add(new iTextSharp.text.Paragraph("USER ACTIVITY AUDIT REPORT", iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 12)));
+                    doc.Add(new iTextSharp.text.Paragraph("Target User: " + nameMatch + " " + surnameMatch + " (" + idMatch + ")", regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("Log File: " + fileName, regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("Generated On: " + DateTime.Now.ToString("F"), regFont));
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+                    // 5. Build Main Activity Table
+                    iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(3);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(new float[] { 2.5f, 2.5f, 5f });
+
+                    table.AddCell(new iTextSharp.text.Phrase("Date/Time", tableHeaderFont));
+                    table.AddCell(new iTextSharp.text.Phrase("User Identity", tableHeaderFont));
+                    table.AddCell(new iTextSharp.text.Phrase("Action Performed", tableHeaderFont));
+
+                    System.Collections.Generic.Dictionary<string, int> categoryTotals = new System.Collections.Generic.Dictionary<string, int>();
+                    string[] lines = File.ReadAllLines(filePath);
+
+                    foreach (string line in lines)
+                    {
+                        bool isUserAction = (line.Contains(idMatch) || (nameMatch != "" && line.Contains(nameMatch)) || (surnameMatch != "" && line.Contains(surnameMatch)));
+
+                        if (isUserAction)
                         {
-                            string time = parts[0].Replace("[", "").Replace("]", "").Trim();
-                            string user = parts[1].Replace("User:", "").Trim();
-                            string action = parts[2].Replace("Action:", "").Trim();
+                            string[] parts = line.Split('|');
+                            if (parts.Length >= 3)
+                            {
+                                string time = parts[0].Replace("[", "").Replace("]", "").Trim();
+                                string user = parts[1].Replace("User:", "").Trim();
+                                string action = parts[2].Replace("Action:", "").Trim();
 
-                            dataGridView1.Rows.Add(time, user, action);
+                                table.AddCell(new iTextSharp.text.Phrase(time, regFont));
+                                table.AddCell(new iTextSharp.text.Phrase(user, regFont));
+                                table.AddCell(new iTextSharp.text.Phrase(action, regFont));
 
-                            // --- NEW: Category Calculation ---
-                            // We identify the category by looking at the first word of the action (e.g., "ADMISSION", "VIEW")
-                            string category = action.Split(' ')[0].ToUpper().Replace(":", "");
-
-                            if (categoryTotals.ContainsKey(category))
-                                categoryTotals[category]++;
-                            else
-                                categoryTotals[category] = 1;
+                                // Category Calculation
+                                string category = action.Split(' ')[0].ToUpper().Replace(":", "");
+                                if (categoryTotals.ContainsKey(category)) categoryTotals[category]++;
+                                else categoryTotals[category] = 1;
+                            }
                         }
                     }
-                }
+                    doc.Add(table);
 
-                // 5. APPEND TOTALS TO GRID (OR SHOW IN MESSAGE)
-                if (categoryTotals.Count > 0)
-                {
-                    // Add a separator row for visual clarity
-                    dataGridView1.Rows.Add("---", "--- SUMMARY ---", "---");
+                    // 6. Summary Section (The Totals)
+                    doc.Add(new iTextSharp.text.Paragraph("\nACTIVITY SUMMARY", tableHeaderFont));
+                    iTextSharp.text.pdf.PdfPTable summaryTable = new iTextSharp.text.pdf.PdfPTable(2);
+                    summaryTable.WidthPercentage = 40;
+                    summaryTable.HorizontalAlignment = iTextSharp.text.Element.ALIGN_LEFT;
 
                     foreach (var entry in categoryTotals)
                     {
-                        // Add a row showing: Category Name | Total | Count
-                        dataGridView1.Rows.Add("TOTAL", entry.Key, entry.Value.ToString() + " Actions performed");
+                        summaryTable.AddCell(new iTextSharp.text.Phrase(entry.Key, regFont));
+                        summaryTable.AddCell(new iTextSharp.text.Phrase(entry.Value.ToString() + " Times", regFont));
                     }
+                    doc.Add(summaryTable);
 
-                    // Highlight the summary rows (optional)
-                    int lastRowIndex = dataGridView1.Rows.Count - 1;
-                    dataGridView1.Rows[lastRowIndex].DefaultCellStyle.BackColor = Color.LightGray;
+                    doc.Close();
                 }
 
-                // 6. Audit Logging
-                MPHBSMS.LogActivity("AUDIT FILTER: Viewed unified logs for " + (nameMatch ?? inputSearch));
+                // Open PDF
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath) { UseShellExecute = true });
+                MPHBSMS.LogActivity("AUDIT EXPORT: Generated PDF Log Audit for " + idMatch);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading unified log: " + ex.Message, "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch (Exception ex) { MessageBox.Show("Critical Error: " + ex.Message); }
         }
 
         private void button24_Click(object sender, EventArgs e)
         {
+    try
+    {
+        // 1. VALIDATION & DIRECTORY SETUP
+        DateTime start, end;
+        if (!DateTime.TryParse(textBox1.Text, out start) || !DateTime.TryParse(textBox2.Text, out end))
+        {
+            MessageBox.Show("Please ensure valid dates are entered before exporting.");
+            return;
+        }
+
+        string currentUser = MPHBSMS.CurrentUser; 
+        string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        string folderPath = Path.Combine(documentsPath, "Marondera Provincial Hospital Bed Statistics Reports", "Detailed Reports");
+        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+        string fileName = string.Format("Detailed_Stats_{0}.pdf", DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+        string fullPath = Path.Combine(folderPath, fileName);
+
+        // 2. DATABASE EXTRACTION (Pulling Raw Movement Data)
+        DataTable movementData = new DataTable();
+        using (OleDbConnection con = new OleDbConnection(DatabaseHelper.ConnectionString))
+        {
+            con.Open();
+            // Select detailed movement records within the date range
+            string sql = "SELECT [MovementDateTime], [hospitalNumber], [name], [surname], [category], [fromWard], [toWard] " +
+                         "FROM [tblPatientMovement] " +
+                         "WHERE [MovementDateTime] BETWEEN ? AND ? " +
+                         "ORDER BY [MovementDateTime] DESC";
+            
+            using (OleDbCommand cmd = new OleDbCommand(sql, con))
+            {
+                cmd.Parameters.AddWithValue("?", start);
+                cmd.Parameters.AddWithValue("?", end);
+                new OleDbDataAdapter(cmd).Fill(movementData);
+            }
+        }
+
+        // 3. PDF GENERATION
+        iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4.Rotate(), 30f, 30f, 30f, 30f); // Landscape for more space
+        using (FileStream fs = new FileStream(fullPath, FileMode.Create))
+        {
+            iTextSharp.text.pdf.PdfWriter writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, fs);
+            doc.Open();
+
+            // --- Header & Logo ---
+            System.Drawing.Image resImage = Properties.Resources.logo1;
+            iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(resImage, System.Drawing.Imaging.ImageFormat.Png);
+            logo.ScaleToFit(70f, 70f);
+            logo.Alignment = iTextSharp.text.Image.ALIGN_CENTER;
+            doc.Add(logo);
+
+            var titleFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 16);
+            var subFont = iTextSharp.text.FontFactory.GetFont("Helvetica-Bold", 11);
+            var regFont = iTextSharp.text.FontFactory.GetFont("Helvetica", 9);
+
+            iTextSharp.text.Paragraph h1 = new iTextSharp.text.Paragraph("MARONDERA PROVINCIAL HOSPITAL", titleFont);
+            h1.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+            doc.Add(h1);
+
+            iTextSharp.text.Paragraph h2 = new iTextSharp.text.Paragraph("DETAILED PATIENT MOVEMENT & BED STATISTICS REPORT", subFont);
+            h2.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+            doc.Add(h2);
+            doc.Add(new iTextSharp.text.Paragraph("Reporting Period: " + start.ToString("dd/MM/yyyy") + " to " + end.ToString("dd/MM/yyyy") + " | Generated By: " + currentUser, regFont));
+            doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+            // --- SECTION 1: STATISTICAL SUMMARY ---
+            doc.Add(new iTextSharp.text.Paragraph("1. EXECUTIVE SUMMARY", subFont));
+            doc.Add(new iTextSharp.text.Paragraph("-" + new string('-', 120), regFont));
+            
+            // Calculate totals from the DataTable locally
+            int adm = movementData.Select("category = 'Admission'").Length;
+            int dis = movementData.Select("category = 'Discharge'").Length;
+            int trans = movementData.Select("category LIKE 'InterWard%'").Length;
+            int death = movementData.Select("category = 'Death'").Length;
+
+            doc.Add(new iTextSharp.text.Paragraph("Total Admissions: " + adm, regFont));
+            doc.Add(new iTextSharp.text.Paragraph("Total Discharges: " + dis, regFont));
+            doc.Add(new iTextSharp.text.Paragraph("Total Transfers: " + trans, regFont));
+            doc.Add(new iTextSharp.text.Paragraph("Total Deaths: " + death, regFont));
+            doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+            // --- SECTION 2: DETAILED LOG ---
+            doc.Add(new iTextSharp.text.Paragraph("2. DETAILED MOVEMENT LOG", subFont));
+            doc.Add(new iTextSharp.text.Paragraph("\n"));
+
+            iTextSharp.text.pdf.PdfPTable table = new iTextSharp.text.pdf.PdfPTable(7);
+            table.WidthPercentage = 100;
+            table.SetWidths(new float[] { 2f, 1.5f, 2f, 2f, 1.5f, 1.5f, 1.5f });
+
+            string[] headers = { "Date/Time", "Hosp #", "Name", "Surname", "Category", "From", "To" };
+            foreach (string h in headers)
+            {
+                iTextSharp.text.pdf.PdfPCell cell = new iTextSharp.text.pdf.PdfPCell(new iTextSharp.text.Phrase(h, subFont));
+                cell.BackgroundColor = iTextSharp.text.BaseColor.LIGHT_GRAY;
+                table.AddCell(cell);
+            }
+
+            foreach (DataRow row in movementData.Rows)
+            {
+                table.AddCell(new iTextSharp.text.Phrase(Convert.ToDateTime(row["MovementDateTime"]).ToString("g"), regFont));
+                table.AddCell(new iTextSharp.text.Phrase(row["hospitalNumber"].ToString(), regFont));
+                table.AddCell(new iTextSharp.text.Phrase(row["name"].ToString(), regFont));
+                table.AddCell(new iTextSharp.text.Phrase(row["surname"].ToString(), regFont));
+                table.AddCell(new iTextSharp.text.Phrase(row["category"].ToString(), regFont));
+                table.AddCell(new iTextSharp.text.Phrase(row["fromWard"].ToString(), regFont));
+                table.AddCell(new iTextSharp.text.Phrase(row["toWard"].ToString(), regFont));
+            }
+            doc.Add(table);
+
+            // --- Signature ---
+            doc.Add(new iTextSharp.text.Paragraph("\n\n"));
+            iTextSharp.text.Paragraph sig = new iTextSharp.text.Paragraph("___________________________\nRecords Officer Signature", regFont);
+            sig.Alignment = iTextSharp.text.Element.ALIGN_RIGHT;
+            doc.Add(sig);
+
+            doc.Close();
+        }
+
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fullPath) { UseShellExecute = true });
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show("Detailed Export Error: " + ex.Message);
+    }
 
         }
 

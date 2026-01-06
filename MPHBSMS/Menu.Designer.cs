@@ -81,7 +81,6 @@
             this.listBox2 = new System.Windows.Forms.ListBox();
             this.button4 = new System.Windows.Forms.Button();
             this.label23 = new System.Windows.Forms.Label();
-            this.highDependencyUnitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.button5 = new System.Windows.Forms.Button();
             this.button6 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
@@ -111,8 +110,8 @@
             // 
             // menuStrip1
             // 
-            this.menuStrip1.BackColor = System.Drawing.Color.Gray;
-            this.menuStrip1.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.menuStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Visible;
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mentalHealthUnitToolStripMenuItem,
@@ -128,7 +127,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
-            this.menuStrip1.Size = new System.Drawing.Size(1350, 28);
+            this.menuStrip1.Size = new System.Drawing.Size(1350, 24);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             this.menuStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.menuStrip1_ItemClicked);
@@ -136,72 +135,70 @@
             // mentalHealthUnitToolStripMenuItem
             // 
             this.mentalHealthUnitToolStripMenuItem.Name = "mentalHealthUnitToolStripMenuItem";
-            this.mentalHealthUnitToolStripMenuItem.Size = new System.Drawing.Size(173, 24);
+            this.mentalHealthUnitToolStripMenuItem.Size = new System.Drawing.Size(119, 20);
             this.mentalHealthUnitToolStripMenuItem.Text = "Mental Health Unit";
             this.mentalHealthUnitToolStripMenuItem.Click += new System.EventHandler(this.mentalHealthUnitToolStripMenuItem_Click);
             // 
             // femaleWardToolStripMenuItem
             // 
             this.femaleWardToolStripMenuItem.Name = "femaleWardToolStripMenuItem";
-            this.femaleWardToolStripMenuItem.Size = new System.Drawing.Size(124, 24);
+            this.femaleWardToolStripMenuItem.Size = new System.Drawing.Size(88, 20);
             this.femaleWardToolStripMenuItem.Text = "Female Ward";
             this.femaleWardToolStripMenuItem.Click += new System.EventHandler(this.femaleWardToolStripMenuItem_Click);
             // 
             // paedatricWardToolStripMenuItem
             // 
             this.paedatricWardToolStripMenuItem.Name = "paedatricWardToolStripMenuItem";
-            this.paedatricWardToolStripMenuItem.Size = new System.Drawing.Size(140, 24);
+            this.paedatricWardToolStripMenuItem.Size = new System.Drawing.Size(99, 20);
             this.paedatricWardToolStripMenuItem.Text = "Paedatric Ward";
             this.paedatricWardToolStripMenuItem.Click += new System.EventHandler(this.paedatricWardToolStripMenuItem_Click);
             // 
             // maleWardToolStripMenuItem
             // 
             this.maleWardToolStripMenuItem.Name = "maleWardToolStripMenuItem";
-            this.maleWardToolStripMenuItem.Size = new System.Drawing.Size(105, 24);
+            this.maleWardToolStripMenuItem.Size = new System.Drawing.Size(76, 20);
             this.maleWardToolStripMenuItem.Text = "Male Ward";
             this.maleWardToolStripMenuItem.Click += new System.EventHandler(this.maleWardToolStripMenuItem_Click);
             // 
             // postNatalWardToolStripMenuItem
             // 
             this.postNatalWardToolStripMenuItem.Name = "postNatalWardToolStripMenuItem";
-            this.postNatalWardToolStripMenuItem.Size = new System.Drawing.Size(147, 24);
+            this.postNatalWardToolStripMenuItem.Size = new System.Drawing.Size(106, 20);
             this.postNatalWardToolStripMenuItem.Text = "Post-Natal Ward";
             this.postNatalWardToolStripMenuItem.Click += new System.EventHandler(this.postNatalWardToolStripMenuItem_Click);
             // 
             // neoNatalWardToolStripMenuItem
             // 
             this.neoNatalWardToolStripMenuItem.Name = "neoNatalWardToolStripMenuItem";
-            this.neoNatalWardToolStripMenuItem.Size = new System.Drawing.Size(138, 24);
+            this.neoNatalWardToolStripMenuItem.Size = new System.Drawing.Size(100, 20);
             this.neoNatalWardToolStripMenuItem.Text = "NeoNatal Ward";
             this.neoNatalWardToolStripMenuItem.Click += new System.EventHandler(this.neoNatalWardToolStripMenuItem_Click);
             // 
             // anteNatalWardToolStripMenuItem
             // 
             this.anteNatalWardToolStripMenuItem.Name = "anteNatalWardToolStripMenuItem";
-            this.anteNatalWardToolStripMenuItem.Size = new System.Drawing.Size(145, 24);
+            this.anteNatalWardToolStripMenuItem.Size = new System.Drawing.Size(103, 20);
             this.anteNatalWardToolStripMenuItem.Text = "AnteNatal Ward";
             this.anteNatalWardToolStripMenuItem.Click += new System.EventHandler(this.anteNatalWardToolStripMenuItem_Click);
             // 
             // labourWardToolStripMenuItem
             // 
             this.labourWardToolStripMenuItem.Name = "labourWardToolStripMenuItem";
-            this.labourWardToolStripMenuItem.Size = new System.Drawing.Size(123, 24);
+            this.labourWardToolStripMenuItem.Size = new System.Drawing.Size(87, 20);
             this.labourWardToolStripMenuItem.Text = "Labour Ward";
             this.labourWardToolStripMenuItem.Click += new System.EventHandler(this.labourWardToolStripMenuItem_Click);
             // 
             // accidentAndEmergenceToolStripMenuItem
             // 
-            this.accidentAndEmergenceToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.highDependencyUnitToolStripMenuItem1});
             this.accidentAndEmergenceToolStripMenuItem.Name = "accidentAndEmergenceToolStripMenuItem";
-            this.accidentAndEmergenceToolStripMenuItem.Size = new System.Drawing.Size(217, 24);
+            this.accidentAndEmergenceToolStripMenuItem.Size = new System.Drawing.Size(151, 20);
             this.accidentAndEmergenceToolStripMenuItem.Text = "Accident and Emergence";
             this.accidentAndEmergenceToolStripMenuItem.Click += new System.EventHandler(this.accidentAndEmergenceToolStripMenuItem_Click_1);
             // 
             // highDependencyUnitToolStripMenuItem
             // 
             this.highDependencyUnitToolStripMenuItem.Name = "highDependencyUnitToolStripMenuItem";
-            this.highDependencyUnitToolStripMenuItem.Size = new System.Drawing.Size(207, 24);
+            this.highDependencyUnitToolStripMenuItem.Size = new System.Drawing.Size(142, 20);
             this.highDependencyUnitToolStripMenuItem.Text = " High Dependency Unit";
             this.highDependencyUnitToolStripMenuItem.Click += new System.EventHandler(this.highDependencyUnitToolStripMenuItem_Click);
             // 
@@ -314,6 +311,9 @@
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(275, 26);
             this.textBox2.TabIndex = 2;
+            this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
+            this.textBox2.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textBox2_KeyPress);
+            this.textBox2.Leave += new System.EventHandler(this.textBox2_Leave);
             // 
             // textBox3
             // 
@@ -322,6 +322,7 @@
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(275, 26);
             this.textBox3.TabIndex = 3;
+            this.textBox3.Leave += new System.EventHandler(this.textBox3_Leave);
             // 
             // radioButton2
             // 
@@ -642,13 +643,6 @@
             this.label23.TabIndex = 19;
             this.label23.Text = "Main Capture Dashboard";
             // 
-            // highDependencyUnitToolStripMenuItem1
-            // 
-            this.highDependencyUnitToolStripMenuItem1.Name = "highDependencyUnitToolStripMenuItem1";
-            this.highDependencyUnitToolStripMenuItem1.Size = new System.Drawing.Size(259, 24);
-            this.highDependencyUnitToolStripMenuItem1.Text = "High Dependency Unit";
-            this.highDependencyUnitToolStripMenuItem1.Click += new System.EventHandler(this.highDependencyUnitToolStripMenuItem1_Click);
-            // 
             // button5
             // 
             this.button5.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -789,7 +783,6 @@
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.ToolStripMenuItem highDependencyUnitToolStripMenuItem;
         private System.Windows.Forms.Label label23;
-        private System.Windows.Forms.ToolStripMenuItem highDependencyUnitToolStripMenuItem1;
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.Button button6;
     }

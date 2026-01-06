@@ -1083,13 +1083,14 @@
             // 
             // button26
             // 
+            this.button26.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.button26.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button26.Location = new System.Drawing.Point(644, 232);
             this.button26.Name = "button26";
             this.button26.Size = new System.Drawing.Size(85, 30);
             this.button26.TabIndex = 61;
             this.button26.Text = "Restore";
-            this.button26.UseVisualStyleBackColor = true;
+            this.button26.UseVisualStyleBackColor = false;
             this.button26.Click += new System.EventHandler(this.button26_Click);
             // 
             // lblLastBackup
