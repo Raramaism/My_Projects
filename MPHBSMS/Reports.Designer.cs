@@ -1016,15 +1016,16 @@
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(324, 69);
             this.listBox1.TabIndex = 57;
+            this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged);
             // 
             // button22
             // 
             this.button22.Font = new System.Drawing.Font("Bookman Old Style", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button22.Location = new System.Drawing.Point(1141, 650);
+            this.button22.Location = new System.Drawing.Point(1140, 650);
             this.button22.Name = "button22";
-            this.button22.Size = new System.Drawing.Size(81, 30);
+            this.button22.Size = new System.Drawing.Size(88, 30);
             this.button22.TabIndex = 56;
-            this.button22.Text = "Load txt";
+            this.button22.Text = "Load pdf";
             this.button22.UseVisualStyleBackColor = true;
             this.button22.Click += new System.EventHandler(this.button22_Click);
             // 

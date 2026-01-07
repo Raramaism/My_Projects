@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MPHBSMS
 {
@@ -11,21 +8,38 @@ namespace MPHBSMS
     {
         public static string CurrentUser { get; set; }
 
+        // Centralized path logic so it works on any computer
+        private static string GetLogFolderPath()
+        {
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string folder = Path.Combine(documentsPath, "Marondera Provincial Hospital Bed Statistics Reports", "SystemLogs");
+
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            return folder;
+        }
+
         public static void LogActivity(string activity)
         {
             try
             {
                 string currentYear = DateTime.Now.Year.ToString();
                 string fileName = "MPH_Log_" + currentYear + ".txt";
-                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
-                string timestamp = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
 
+                // Saves to Documents\Marondera Provincial Hospital Bed Statistics Reports\SystemLogs
+                string logPath = Path.Combine(GetLogFolderPath(), fileName);
+
+                string timestamp = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
                 string logEntry = "[" + timestamp + "] | User: " + (CurrentUser ?? "UNKNOWN").PadRight(12) + " | Action: " + activity + Environment.NewLine;
+
                 File.AppendAllText(logPath, logEntry);
             }
             catch { }
         }
 
+        // Standard method syntax for VS 2013 compatibility
         public static void LogLogin()
         {
             LogActivity("LOGIN: User successfully entered the system.");
@@ -38,36 +52,24 @@ namespace MPHBSMS
 
         public static void LogFailedLogin(string attemptedUsername)
         {
-            string alert = "SECURITY ALERT: Failed login attempt for username: " + attemptedUsername;
-            LogActivity(alert);
+            LogActivity("SECURITY ALERT: Failed login attempt for username: " + attemptedUsername);
         }
 
-        // Using the full name to avoid iTextSharp conflict
         public static System.Collections.Generic.List<string> GetAvailableLogFiles()
         {
-            // Rename the variable 'logFiles' to 'myFiles' to fix Error 1
             System.Collections.Generic.List<string> myFiles = new System.Collections.Generic.List<string>();
-
             try
             {
-                string path = AppDomain.CurrentDomain.BaseDirectory;
-
-                // Find the files
+                string path = GetLogFolderPath();
                 string[] files = Directory.GetFiles(path, "MPH_Log_*.txt");
 
                 foreach (string file in files)
                 {
-                    // Add the filename to our renamed list
                     myFiles.Add(Path.GetFileName(file));
                 }
             }
-            catch
-            {
-                // Handle folder access errors if necessary
-            }
-
-            return myFiles; // Return the renamed list
-           }
+            catch { }
+            return myFiles;
         }
     }
-
+}
