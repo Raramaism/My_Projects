@@ -70,7 +70,7 @@ namespace MPHBSMS
                 Directory.Delete(tempFolder, true);
                 File.WriteAllText(Path.Combine(logPath, "backup_status.txt"), DateTime.Now.ToString("dd MMM yyyy HH:mm"));
 
-                if (!isClosing) MessageBox.Show("Backup Successful!");
+                
             }
             catch (Exception ex) { if (!isClosing) MessageBox.Show("Backup Error: " + ex.Message); }
         }
